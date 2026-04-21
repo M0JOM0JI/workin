@@ -58,6 +58,8 @@
 |------|------|------|
 | GET /stores | ✅ | 내 매장 목록 (store 정보 포함) |
 | POST /stores | ✅ | 매장 생성 + OWNER 자동 등록 |
+| Store 모델 필드 확장 (DB 마이그레이션) | ⬜ | businessOwner, businessNumber, phone, mobilePhone 컬럼 추가 |
+| CreateStoreDto 필드 확장 | ⬜ | 사업자명, 사업자번호, 매장전화번호, 휴대폰번호 추가 |
 | GET /stores/:id | ✅ | |
 | GET /stores/:id/staffs | ✅ | 직원 목록 (user 정보 포함) |
 | PATCH /stores/:id | ✅ | OWNER만 |
@@ -105,6 +107,8 @@
 | Zustand 인증 스토어 | ✅ | user + accessToken + stores + currentStoreId persist |
 | TanStack Query Provider | ✅ | providers.tsx |
 | 다중 매장 전환 | ⚠️ | 사이드바 select 존재하나 전환 시 데이터 리로드 검증 필요 |
+| 온보딩 리다이렉트 (매장 0개 → /onboarding/store) | ⬜ | 로그인 후 stores.length === 0 감지 → 강제 이동 |
+| 사이드바 `+ 매장 추가` 버튼 (OWNER만) | ⬜ | 클릭 시 매장 추가 모달 오픈 |
 
 ### 3-2. API 훅 (src/hooks/)
 | 훅 | 상태 | 비고 |
@@ -114,6 +118,7 @@
 | useSchedules + useCreateSchedule + useDeleteSchedule | ✅ | |
 | useAttendance (30초 자동 갱신) | ✅ | |
 | usePayroll | ✅ | |
+| useCreateStore | ⬜ | POST /stores 호출, 생성 후 stores 목록 갱신 |
 
 ### 3-3. UI 컴포넌트
 | 항목 | 상태 | 비고 |
@@ -122,12 +127,15 @@
 | Shell / Sidebar (실제 매장 목록 + 로그아웃) / Header | ✅ | |
 | ScheduleBlock / StaffCard / AttendanceBadge / PayrollRow | ✅ | |
 | Modal (공용) | ⬜ | 스케줄 추가·직원 상세 등에서 필요 |
+| StoreForm (매장 생성·수정 공용 폼 컴포넌트) | ⬜ | 매장명·사업자명·사업자번호·주소·전화·업종 입력 |
 
 ### 3-4. 페이지
 | 페이지 | UI | API 연동 | 비고 |
 |--------|-----|---------|------|
 | /auth/login | ✅ | ✅ | 로그인 후 user + stores 세팅 |
 | /auth/signup | ⬜ | ⬜ | 미구현 |
+| /onboarding/store (첫 매장 생성) | ⬜ | ⬜ | stores=0 시 강제 진입, WIREFRAME B-00 |
+| 사이드바 — 매장 추가 모달 | ⬜ | ⬜ | OWNER만 노출, WIREFRAME B-11 |
 | /dashboard | ✅ | ✅ | 실시간 출근현황, 스케줄, 급여 |
 | /schedules | ✅ | ✅ | 주간 그리드 (실제 API) |
 | /schedules — 시프트 추가 모달 | ⬜ | ⬜ | `+ 시프트 추가` → 직원/날짜/시간 입력 → POST |
@@ -139,7 +147,7 @@
 | /attendance — 수동 수정 | ⬜ | ⬜ | 오너/매니저가 출퇴근 시간 직접 수정 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
 | /payroll — 직원별 상세 | ⬜ | ⬜ | 행 클릭 → 주차별 breakdown |
-| /settings | ✅ | ✅ | 매장 수정/삭제 |
+| /settings | ✅ | ✅ | 매장 수정/삭제 (확장 필드 반영 필요) |
 
 ---
 
@@ -203,12 +211,16 @@
 |------|------|----------|
 | 1 | ✅ DB / API 기동 | PostgreSQL·Redis 설치, migrate, API·웹 서버 실행 완료 |
 | 2 | ✅ 시드 데이터 | 5명(오너+매니저+알바3)·53스케줄·53출퇴근, KST 시간 정확 |
-| 3 | 🔴 회원가입 페이지 | /auth/signup (웹 + 모바일) |
-| 4 | 🔴 스케줄 추가/삭제 UI | 시프트 추가 모달 + 블록 삭제 |
-| 5 | 🔴 알바생 초대 UI | 초대 코드 발급 + 클립보드 복사 |
-| 6 | 🔴 모바일 실기동 검증 | Expo 앱 전 화면 동작 확인 + KST 시간 표시 |
-| 7 | 🟡 직원 상세·시급 수정 | 웹 /staffs 모달, PATCH API |
-| 8 | 🟡 출퇴근 수동 수정 | 웹 /attendance, PATCH API |
-| 9 | 🟡 급여 상세 | 웹 /payroll 직원별 주차 breakdown |
-| 10 | 🟢 API 테스트 작성 | Jest 유닛 + E2E |
-| 11 | 🟢 수동 통합 테스트 | 웹·모바일 전체 흐름 시나리오 |
+| 3 | 🔴 매장 생성 — DB 스키마 확장 | businessOwner·businessNumber·phone·mobilePhone 컬럼 추가 마이그레이션 |
+| 4 | 🔴 매장 생성 — 온보딩 페이지 | /onboarding/store (stores=0 → 강제 진입, B-00) |
+| 5 | 🔴 매장 생성 — 사이드바 추가 버튼 | 사이드바 `+ 매장 추가` + 모달 (B-11), OWNER만 |
+| 6 | 🔴 회원가입 페이지 | /auth/signup (웹 + 모바일) |
+| 7 | 🔴 스케줄 추가/삭제 UI | 시프트 추가 모달 + 블록 삭제 |
+| 8 | 🔴 알바생 초대 UI | 초대 코드 발급 + 클립보드 복사 |
+| 9 | 🔴 모바일 실기동 검증 | Expo 앱 전 화면 동작 확인 + KST 시간 표시 |
+| 10 | 🟡 직원 상세·시급 수정 | 웹 /staffs 모달, PATCH API |
+| 11 | 🟡 출퇴근 수동 수정 | 웹 /attendance, PATCH API |
+| 12 | 🟡 급여 상세 | 웹 /payroll 직원별 주차 breakdown |
+| 13 | 🟡 /settings 확장 필드 반영 | 사업자명·사업자번호·전화번호 편집 UI |
+| 14 | 🟢 API 테스트 작성 | Jest 유닛 + E2E |
+| 15 | 🟢 수동 통합 테스트 | 웹·모바일 전체 흐름 시나리오 |
