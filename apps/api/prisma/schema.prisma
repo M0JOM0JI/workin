@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── 사용자 ───────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  phone     String?
+  password  String?  // 소셜 로그인 시 null
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  storeStaffs StoreStaff[]
+
+  @@map("users")
+}
+
+// ─── 매장 ───────────────────────────────────────────
+
+model Store {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  category  String?
+  ownerId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  staffs      StoreStaff[]
+  schedules   Schedule[]
+  attendances Attendance[]
+
+  @@map("stores")
+}
+
+// ─── 매장-직원 관계 ────────────────────────────────────
+
+model StoreStaff {
+  id         String    @id @default(cuid())
+  storeId    String
+  userId     String
+  role       Role      @default(STAFF)
+  hourlyWage Int       @default(10030) // 2024 최저시급
+  joinedAt   DateTime  @default(now())
+  leftAt     DateTime? // null = 재직중
+
+  store       Store        @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedules   Schedule[]
+  attendances Attendance[]
+
+  @@unique([storeId, userId])
+  @@map("store_staffs")
+}
+
+// ─── 스케줄 ───────────────────────────────────────────
+
+model Schedule {
+  id      String   @id @default(cuid())
+  storeId String
+  staffId String   // StoreStaff.id
+  startAt DateTime
+  endAt   DateTime
+  memo    String?
+  createdAt DateTime @default(now())
+
+  store      Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staff      StoreStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  attendance Attendance?
+
+  @@index([storeId, startAt])
+  @@map("schedules")
+}
+
+// ─── 출퇴근 기록 ──────────────────────────────────────
+
+model Attendance {
+  id         String    @id @default(cuid())
+  storeId    String
+  staffId    String    // StoreStaff.id
+  scheduleId String?   @unique
+  clockIn    DateTime
+  clockOut   DateTime?
+  lat        Float?
+  lng        Float?
+  createdAt  DateTime  @default(now())
+
+  store    Store      @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  staff    StoreStaff @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  schedule Schedule?  @relation(fields: [scheduleId], references: [id])
+
+  @@index([storeId, clockIn])
+  @@index([staffId, clockIn])
+  @@map("attendances")
+}
+
+// ─── Enum ─────────────────────────────────────────────
+
+enum Role {
+  OWNER
+  MANAGER
+  STAFF
+}
