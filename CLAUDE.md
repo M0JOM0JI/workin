@@ -166,9 +166,16 @@ DB에는 모든 시간이 **UTC**로 저장됩니다. 표시할 때는 반드시
 | 환경 변경 (패키지, Docker, 포트, 명령어 등) | `CLAUDE.md` — 해당 섹션 업데이트 |
 | 기동 절차 변경 | `docs/STARTUP.md` — 단계별 가이드 업데이트 |
 | 미구현 항목 발견 / 추가 | `CHECKLIST.md` — 새 행 추가 |
+| **배포** | `docs/changelog/YYYY-MM-DD.md` — 해당 날짜 파일에 변경사항 기록 |
 | Git 커밋 | 위 문서 변경사항도 같은 커밋에 포함 |
 
 > 기록 없이 작업만 완료하는 것은 불완전한 작업으로 간주한다.
+
+### Changelog 작성 규칙
+- 파일 경로: `docs/changelog/YYYY-MM-DD.md` (KST 배포 당일 기준)
+- 같은 날 여러 번 배포 시 **같은 파일에 섹션 추가**
+- 이모지 분류: ✨ 새 기능 / 🐛 버그 수정 / ♻️ 리팩터링 / 🔒 보안 / 📝 문서 / 🏗️ 인프라
+- 작성 규칙 상세: [`docs/changelog/README.md`](docs/changelog/README.md)
 
 ## 주요 문서
 
@@ -177,3 +184,4 @@ DB에는 모든 시간이 **UTC**로 저장됩니다. 표시할 때는 반드시
 - [기술 스펙](docs/TECH_SPEC.md)
 - [기동 가이드](docs/STARTUP.md)
 - [구현 체크리스트](CHECKLIST.md)
+- [Changelog](docs/changelog/) — 일자별 배포 변경사항
