@@ -184,4 +184,5 @@ DB에는 모든 시간이 **UTC**로 저장됩니다. 표시할 때는 반드시
 - [기술 스펙](docs/TECH_SPEC.md)
 - [기동 가이드](docs/STARTUP.md)
 - [구현 체크리스트](CHECKLIST.md)
+- [화면별 진척도](docs/PROGRESS.md) — 화면 단위 구현 현황
 - [Changelog](docs/changelog/) — 일자별 배포 변경사항
