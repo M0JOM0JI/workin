@@ -2,10 +2,11 @@ import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { format } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { api } from '@/lib/api';
 import { Card, Badge } from '@/components/ui';
 import { colors, fontSize, spacing } from '@/lib/theme';
-import { formatMinutes } from '@workin/utils';
+import { formatMinutes, formatTime } from '@workin/utils';
 
 export default function AttendanceScreen() {
   const [yearMonth] = useState(() => format(new Date(), 'yyyy-MM'));
@@ -53,7 +54,7 @@ export default function AttendanceScreen() {
               <Card key={r.id} padding="md" style={styles.recordCard}>
                 <View style={styles.recordHeader}>
                   <Text style={styles.recordDate}>
-                    {format(new Date(r.clockIn), 'MM.dd (EEE)', { locale: undefined })}
+                    {format(new Date(r.clockIn), 'MM.dd (EEE)', { locale: ko })}
                   </Text>
                   <Badge variant={r.clockOut ? 'gray' : 'green'} dot>
                     {r.clockOut ? '퇴근' : '근무 중'}
@@ -61,11 +62,11 @@ export default function AttendanceScreen() {
                 </View>
                 <View style={styles.recordTimes}>
                   <Text style={styles.timeText}>
-                    출근 {format(new Date(r.clockIn), 'HH:mm')}
+                    출근 {formatTime(r.clockIn)}
                   </Text>
                   {r.clockOut && (
                     <Text style={styles.timeText}>
-                      퇴근 {format(new Date(r.clockOut), 'HH:mm')}
+                      퇴근 {formatTime(r.clockOut)}
                     </Text>
                   )}
                   {duration && (

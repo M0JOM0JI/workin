@@ -4,7 +4,7 @@ import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { formatKRW } from '@workin/utils';
+import { formatKRW, formatTime } from '@workin/utils';
 
 export default function HomeScreen() {
   const qc = useQueryClient();
@@ -87,8 +87,7 @@ export default function HomeScreen() {
         <Text style={styles.cardTitle}>오늘 스케줄</Text>
         {todaySchedule ? (
           <Text style={styles.scheduleTime}>
-            {format(new Date(todaySchedule.startAt), 'HH:mm')} ~{' '}
-            {format(new Date(todaySchedule.endAt), 'HH:mm')}
+            {formatTime(todaySchedule.startAt)} ~ {formatTime(todaySchedule.endAt)}
           </Text>
         ) : (
           <Text style={styles.noSchedule}>오늘 스케줄이 없습니다</Text>
@@ -121,7 +120,7 @@ export default function HomeScreen() {
           </Text>
           {isClockedIn && myAttendance?.clockIn && (
             <Text style={styles.clockSubText}>
-              출근 {format(new Date(myAttendance.clockIn), 'HH:mm')}
+              출근 {formatTime(myAttendance.clockIn)}
             </Text>
           )}
         </TouchableOpacity>

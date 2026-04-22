@@ -4,14 +4,19 @@ import { useState } from 'react';
 import { addDays, format, startOfWeek, endOfWeek } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Header } from '@/components/layout';
-import { Button, Card, Spinner, Empty } from '@/components/ui';
+import { Button, Card, Spinner, Empty, Modal, Input } from '@/components/ui';
 import { ScheduleBlock, getStaffColor } from '@/components/domain/schedule-block';
 import { useAuthStore } from '@/store/auth.store';
-import { useSchedules } from '@/hooks/useSchedules';
+import { useSchedules, useCreateSchedule, useDeleteSchedule } from '@/hooks/useSchedules';
+import { useStaffs } from '@/hooks/useStaffs';
 import { getKSTHour, getKSTDateStr } from '@workin/utils';
 
 const HOURS = Array.from({ length: 16 }, (_, i) => i + 8); // 08 ~ 23
 const DAYS  = ['월', '화', '수', '목', '금', '토', '일'];
+
+function toDatetimeLocal(dateStr: string, timeStr: string) {
+  return `${dateStr}T${timeStr}:00.000Z`;
+}
 
 export default function SchedulesPage() {
   const [weekStart, setWeekStart] = useState(() =>
@@ -24,6 +29,9 @@ export default function SchedulesPage() {
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
   const { data: schedules = [], isLoading } = useSchedules(currentStoreId, weekStart, weekEnd);
+  const { data: staffs = [] } = useStaffs(currentStoreId);
+  const createMutation = useCreateSchedule(currentStoreId);
+  const deleteMutation = useDeleteSchedule(currentStoreId);
 
   // staffName 중복 제거 → colorIndex 부여
   const staffColorMap = new Map<string, number>();
@@ -32,11 +40,70 @@ export default function SchedulesPage() {
     if (!staffColorMap.has(name)) staffColorMap.set(name, staffColorMap.size);
   });
 
+  // 시프트 추가 모달 상태
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    staffId: '',
+    date: format(new Date(), 'yyyy-MM-dd'),
+    startTime: '09:00',
+    endTime: '18:00',
+  });
+  const [addError, setAddError] = useState('');
+
+  // 삭제 확인 모달 상태
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const activeStaffs = staffs.filter((s) => !s.leftAt);
+
+  function handleAddOpen() {
+    setAddForm({
+      staffId: activeStaffs[0]?.id ?? '',
+      date: format(days[0], 'yyyy-MM-dd'),
+      startTime: '09:00',
+      endTime: '18:00',
+    });
+    setAddError('');
+    setAddOpen(true);
+  }
+
+  async function handleAddSubmit() {
+    if (!addForm.staffId) { setAddError('직원을 선택해주세요.'); return; }
+    if (addForm.startTime >= addForm.endTime) { setAddError('종료 시간은 시작 시간보다 늦어야 합니다.'); return; }
+    setAddError('');
+    try {
+      // KST 시간 → UTC: HH:mm(KST) = HH-9:mm(UTC)
+      const kstToUtc = (dateStr: string, timeStr: string) => {
+        const [h, m] = timeStr.split(':').map(Number);
+        const d = new Date(Date.UTC(
+          Number(dateStr.slice(0, 4)),
+          Number(dateStr.slice(5, 7)) - 1,
+          Number(dateStr.slice(8, 10)),
+          h - 9, m, 0, 0,
+        ));
+        return d.toISOString();
+      };
+      await createMutation.mutateAsync({
+        staffId: addForm.staffId,
+        startAt: kstToUtc(addForm.date, addForm.startTime),
+        endAt:   kstToUtc(addForm.date, addForm.endTime),
+      });
+      setAddOpen(false);
+    } catch (e: any) {
+      setAddError(e.response?.data?.message ?? '저장에 실패했습니다.');
+    }
+  }
+
+  async function handleDelete() {
+    if (!deleteId) return;
+    await deleteMutation.mutateAsync(deleteId);
+    setDeleteId(null);
+  }
+
   return (
     <>
       <Header
         title="스케줄 관리"
-        actions={<Button size="sm">+ 시프트 추가</Button>}
+        actions={<Button size="sm" onClick={handleAddOpen}>+ 시프트 추가</Button>}
       />
 
       {/* 주간 네비 */}
@@ -89,9 +156,7 @@ export default function SchedulesPage() {
                   const dayStr = format(day, 'yyyy-MM-dd');
                   const blocks = schedules.filter((s) => {
                     const start = new Date(s.startAt);
-                    const startHour = getKSTHour(start);
-                    const startDay  = getKSTDateStr(start);
-                    return startDay === dayStr && startHour === hour;
+                    return getKSTDateStr(start) === dayStr && getKSTHour(start) === hour;
                   });
                   return (
                     <div key={dayIdx} className="border-l border-gray-50 p-1 space-y-0.5">
@@ -105,6 +170,7 @@ export default function SchedulesPage() {
                             startAt={b.startAt}
                             endAt={b.endAt}
                             colorIndex={colorIndex}
+                            onClick={() => setDeleteId(b.id)}
                           />
                         );
                       })}
@@ -122,6 +188,88 @@ export default function SchedulesPage() {
           </div>
         </Card>
       )}
+
+      {/* 시프트 추가 모달 */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="시프트 추가">
+        <div className="space-y-4">
+          {addError && (
+            <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{addError}</p>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">직원</label>
+            <select
+              value={addForm.staffId}
+              onChange={(e) => setAddForm({ ...addForm, staffId: e.target.value })}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            >
+              {activeStaffs.length === 0 && <option value="">등록된 직원이 없습니다</option>}
+              {activeStaffs.map((s) => (
+                <option key={s.id} value={s.id}>{s.user.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <Input
+            label="날짜"
+            type="date"
+            value={addForm.date}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setAddForm({ ...addForm, date: e.target.value })
+            }
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="시작 시간 (KST)"
+              type="time"
+              value={addForm.startTime}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAddForm({ ...addForm, startTime: e.target.value })
+              }
+            />
+            <Input
+              label="종료 시간 (KST)"
+              type="time"
+              value={addForm.endTime}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setAddForm({ ...addForm, endTime: e.target.value })
+              }
+            />
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button variant="ghost" className="flex-1" onClick={() => setAddOpen(false)}>
+              취소
+            </Button>
+            <Button
+              className="flex-1"
+              onClick={handleAddSubmit}
+              disabled={createMutation.isPending}
+            >
+              {createMutation.isPending ? '저장 중...' : '저장'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* 삭제 확인 모달 */}
+      <Modal open={!!deleteId} onClose={() => setDeleteId(null)} title="시프트 삭제" size="sm">
+        <p className="text-sm text-gray-600 mb-5">이 시프트를 삭제하시겠습니까?</p>
+        <div className="flex gap-2">
+          <Button variant="ghost" className="flex-1" onClick={() => setDeleteId(null)}>
+            취소
+          </Button>
+          <Button
+            variant="danger"
+            className="flex-1"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? '삭제 중...' : '삭제'}
+          </Button>
+        </div>
+      </Modal>
     </>
   );
 }

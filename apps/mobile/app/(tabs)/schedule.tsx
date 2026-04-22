@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale';
 import { api } from '@/lib/api';
 import { Card } from '@/components/ui';
 import { colors, fontSize, spacing } from '@/lib/theme';
+import { formatTime } from '@workin/utils';
 
 const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -66,8 +67,7 @@ export default function ScheduleScreen() {
                   daySchedules.map((s: any) => (
                     <Card key={s.id} padding="sm" style={styles.scheduleCard}>
                       <Text style={styles.scheduleTime}>
-                        {format(new Date(s.startAt), 'HH:mm')} ~{' '}
-                        {format(new Date(s.endAt), 'HH:mm')}
+                        {formatTime(s.startAt)} ~ {formatTime(s.endAt)}
                       </Text>
                     </Card>
                   ))

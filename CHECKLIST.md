@@ -118,7 +118,7 @@
 | useSchedules + useCreateSchedule + useDeleteSchedule | ✅ | |
 | useAttendance (30초 자동 갱신) | ✅ | |
 | usePayroll | ✅ | |
-| useCreateStore | ⬜ | POST /stores 호출, 생성 후 stores 목록 갱신 |
+| useCreateStore | ✅ | 사이드바 내 useMutation으로 구현 |
 
 ### 3-3. UI 컴포넌트
 | 항목 | 상태 | 비고 |
@@ -126,27 +126,27 @@
 | Button / Input / Card / Badge / Avatar / Spinner / Empty | ✅ | |
 | Shell / Sidebar (실제 매장 목록 + 로그아웃) / Header | ✅ | |
 | ScheduleBlock / StaffCard / AttendanceBadge / PayrollRow | ✅ | |
-| Modal (공용) | ⬜ | 스케줄 추가·직원 상세 등에서 필요 |
+| Modal (공용) | ✅ | ESC 닫기, 백드롭 클릭 닫기, size prop |
 | StoreForm (매장 생성·수정 공용 폼 컴포넌트) | ⬜ | 매장명·사업자명·사업자번호·주소·전화·업종 입력 |
 
 ### 3-4. 페이지
 | 페이지 | UI | API 연동 | 비고 |
 |--------|-----|---------|------|
 | /auth/login | ✅ | ✅ | 로그인 후 user + stores 세팅 |
-| /auth/signup | ⬜ | ⬜ | 미구현 |
+| /auth/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, 자동 로그인 |
 | /onboarding/store (첫 매장 생성) | ⬜ | ⬜ | stores=0 시 강제 진입, WIREFRAME B-00 |
-| 사이드바 — 매장 추가 모달 | ⬜ | ⬜ | OWNER만 노출, WIREFRAME B-11 |
+| 사이드바 — 매장 추가 모달 | ✅ | ✅ | OWNER만 노출, 이름·주소·업종 입력, WIREFRAME B-11 |
 | /dashboard | ✅ | ✅ | 실시간 출근현황, 스케줄, 급여 |
 | /schedules | ✅ | ✅ | 주간 그리드 (실제 API) |
-| /schedules — 시프트 추가 모달 | ⬜ | ⬜ | `+ 시프트 추가` → 직원/날짜/시간 입력 → POST |
-| /schedules — 블록 삭제 | ⬜ | ⬜ | 블록 클릭 → 삭제 확인 → DELETE |
+| /schedules — 시프트 추가 모달 | ✅ | ✅ | 직원 선택·날짜·KST 시간 입력 → POST |
+| /schedules — 블록 삭제 | ✅ | ✅ | 블록 클릭 → 삭제 확인 모달 → DELETE |
 | /staffs | ✅ | ✅ | 재직/퇴직 필터 |
-| /staffs — 초대 코드 발급 UI | ⬜ | ⬜ | `+ 초대하기` → 코드 발급 → 클립보드 복사 |
+| /staffs — 초대 코드 발급 UI | ✅ | ✅ | 코드 발급 모달, 클립보드 복사, 새 코드 발급 |
 | /staffs — 직원 상세·시급 수정 | ⬜ | ⬜ | 카드 클릭 → 시급 변경·퇴직 처리 |
 | /attendance | ✅ | ✅ | 30초 자동 갱신 |
 | /attendance — 수동 수정 | ⬜ | ⬜ | 오너/매니저가 출퇴근 시간 직접 수정 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
-| /payroll — 직원별 상세 | ⬜ | ⬜ | 행 클릭 → 주차별 breakdown |
+| /payroll — 직원별 상세 | ✅ | ✅ | 행 클릭 → 급여 요약 + 출퇴근 내역 모달 |
 | /settings | ✅ | ✅ | 매장 수정/삭제 (확장 필드 반영 필요) |
 
 ---
@@ -162,14 +162,14 @@
 | TanStack Query 설정 | ✅ | |
 | 인증 가드 (AuthGuard) | ✅ | _layout.tsx — 미인증 시 /login 리다이렉트 |
 | 디자인 토큰 (theme.ts) | ✅ | |
-| KST 시간 표시 검증 | ⬜ | @workin/utils formatTime 적용 여부 확인 |
+| KST 시간 표시 검증 | ✅ | formatTime() 적용 완료 (index/attendance/schedule) |
 
 ### 4-2. 화면
 | 화면 | UI | API 연동 | 비고 |
 |------|-----|---------|------|
 | (auth)/login | ✅ | ✅ | SecureStore 저장 + currentStoreId 세팅 |
-| (auth)/signup | ⬜ | ⬜ | 미구현 |
-| (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신 |
+| (auth)/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, KeyboardAvoidingView |
+| (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신, KST 시간 표시 |
 | (tabs)/attendance | ✅ | ✅ | 월별 출퇴근, useQuery |
 | (tabs)/schedule | ✅ | ✅ | 주간 스케줄, useQuery |
 | (tabs)/payroll | ✅ | ✅ | 월별 급여, /me/payroll |

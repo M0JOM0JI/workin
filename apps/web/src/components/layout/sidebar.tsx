@@ -1,9 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
 import { cn } from '@/lib/cn';
 import { useAuthStore } from '@/store/auth.store';
+import { Modal, Button, Input } from '@/components/ui';
+import { api } from '@/lib/api';
 
 const navItems = [
   { href: '/dashboard',   label: '대시보드',   icon: '▦' },
@@ -16,10 +20,41 @@ const navItems = [
 export function Sidebar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, stores, currentStoreId, setCurrentStoreId, clearAuth } = useAuthStore();
+  const { user, stores, currentStoreId, setCurrentStoreId, setStores, clearAuth } = useAuthStore();
 
   const currentStore = stores.find((s) => s.store.id === currentStoreId)?.store
     ?? stores[0]?.store;
+
+  // 현재 유저의 역할 (현재 매장 기준)
+  const myRole = stores.find((s) => s.store.id === currentStoreId)?.role ?? null;
+  const isOwner = myRole === 'OWNER';
+
+  // 매장 추가 모달
+  const [addOpen, setAddOpen] = useState(false);
+  const [form, setForm] = useState({ name: '', address: '', category: '' });
+  const [formError, setFormError] = useState('');
+
+  const createStoreMutation = useMutation({
+    mutationFn: () => api.post('/stores', form),
+    onSuccess: async () => {
+      const { data: newStores } = await api.get('/stores');
+      setStores(newStores);
+      // 새로 만든 매장을 currentStore로 설정
+      const latest = newStores[newStores.length - 1];
+      if (latest) setCurrentStoreId(latest.store.id);
+      setAddOpen(false);
+      setForm({ name: '', address: '', category: '' });
+    },
+    onError: (e: any) => {
+      setFormError(e.response?.data?.message ?? '매장 생성에 실패했습니다.');
+    },
+  });
+
+  function handleOpenAdd() {
+    setForm({ name: '', address: '', category: '' });
+    setFormError('');
+    setAddOpen(true);
+  }
 
   function handleLogout() {
     clearAuth();
@@ -34,8 +69,8 @@ export function Sidebar() {
         <span className="text-xl font-bold text-primary-600 tracking-tight">Workin</span>
       </div>
 
-      {/* 매장 선택 */}
-      <div className="px-4 py-3 border-b border-gray-100">
+      {/* 매장 선택 + 추가 */}
+      <div className="px-4 py-3 border-b border-gray-100 space-y-1.5">
         {stores.length > 1 ? (
           <select
             value={currentStoreId ?? ''}
@@ -55,6 +90,17 @@ export function Sidebar() {
               {currentStore?.name ?? '매장 없음'}
             </span>
           </div>
+        )}
+
+        {/* 매장 추가 버튼 — OWNER만 노출 */}
+        {isOwner && (
+          <button
+            onClick={handleOpenAdd}
+            className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs text-primary-600 hover:bg-primary-50 transition-colors font-medium"
+          >
+            <span>+</span>
+            <span>매장 추가</span>
+          </button>
         )}
       </div>
 
@@ -98,6 +144,51 @@ export function Sidebar() {
           {user?.name ?? '프로필'} · 로그아웃
         </button>
       </div>
+
+      {/* 매장 추가 모달 */}
+      <Modal open={addOpen} onClose={() => setAddOpen(false)} title="새 매장 추가">
+        <div className="space-y-4">
+          {formError && (
+            <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>
+          )}
+          <Input
+            label="매장명 *"
+            placeholder="예: 스타벅스 강남점"
+            value={form.name}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setForm({ ...form, name: e.target.value })
+            }
+          />
+          <Input
+            label="주소"
+            placeholder="도로명 주소"
+            value={form.address}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setForm({ ...form, address: e.target.value })
+            }
+          />
+          <Input
+            label="업종"
+            placeholder="예: 카페, 편의점"
+            value={form.category}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              setForm({ ...form, category: e.target.value })
+            }
+          />
+          <div className="flex gap-2 pt-1">
+            <Button variant="ghost" className="flex-1" onClick={() => setAddOpen(false)}>
+              취소
+            </Button>
+            <Button
+              className="flex-1"
+              disabled={!form.name.trim() || createStoreMutation.isPending}
+              onClick={() => createStoreMutation.mutate()}
+            >
+              {createStoreMutation.isPending ? '생성 중...' : '매장 추가'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </aside>
   );
 }
