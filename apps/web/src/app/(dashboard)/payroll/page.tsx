@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Header } from '@/components/layout';
 import { Card, Avatar, Spinner, Empty, Modal } from '@/components/ui';
 import { format, subMonths, addMonths } from 'date-fns';
+import { ko } from 'date-fns/locale';
 import { useAuthStore } from '@/store/auth.store';
 import { usePayroll, type PayrollItem } from '@/hooks/usePayroll';
 import { api } from '@/lib/api';
@@ -162,7 +163,7 @@ export default function PayrollPage() {
                     return (
                       <div key={a.id} className="flex items-center justify-between py-2 px-3 rounded-lg hover:bg-gray-50 text-sm">
                         <span className="text-gray-700 font-medium">
-                          {format(new Date(a.clockIn), 'MM.dd (EEE)', { locale: { localize: undefined } as any })}
+                          {format(new Date(a.clockIn), 'MM.dd (EEE)', { locale: ko })}
                         </span>
                         <span className="text-gray-500">
                           {formatTime(a.clockIn)}
