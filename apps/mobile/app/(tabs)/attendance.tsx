@@ -1,7 +1,7 @@
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { format } from 'date-fns';
+import { format, addMonths, subMonths } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { api } from '@/lib/api';
 import { Card, Badge } from '@/components/ui';
@@ -9,7 +9,8 @@ import { colors, fontSize, spacing } from '@/lib/theme';
 import { formatMinutes, formatTime } from '@workin/utils';
 
 export default function AttendanceScreen() {
-  const [yearMonth] = useState(() => format(new Date(), 'yyyy-MM'));
+  const [month, setMonth] = useState(new Date());
+  const yearMonth = format(month, 'yyyy-MM');
 
   const { data } = useQuery({
     queryKey: ['my-attendance', yearMonth],
@@ -26,7 +27,15 @@ export default function AttendanceScreen() {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>출근 기록</Text>
-        <Text style={styles.month}>{yearMonth.replace('-', '년 ')}월</Text>
+        <View style={styles.monthNav}>
+          <TouchableOpacity onPress={() => setMonth((m) => subMonths(m, 1))} style={styles.navBtn}>
+            <Text style={styles.navArrow}>‹</Text>
+          </TouchableOpacity>
+          <Text style={styles.month}>{format(month, 'yyyy년 MM월')}</Text>
+          <TouchableOpacity onPress={() => setMonth((m) => addMonths(m, 1))} style={styles.navBtn}>
+            <Text style={styles.navArrow}>›</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 월간 요약 */}
@@ -85,8 +94,11 @@ export default function AttendanceScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bg },
   header: { backgroundColor: colors.surface, paddingTop: 56, paddingHorizontal: spacing.xl, paddingBottom: spacing.lg, borderBottomWidth: 1, borderBottomColor: colors.border },
-  title: { fontSize: fontSize.xl, fontWeight: 'bold', color: colors.textPrimary },
-  month: { fontSize: fontSize.sm, color: colors.textMuted, marginTop: 2 },
+  title: { fontSize: fontSize.xl, fontWeight: 'bold', color: colors.textPrimary, marginBottom: spacing.sm },
+  monthNav: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  month: { fontSize: fontSize.sm, fontWeight: '600', color: colors.textSecondary, minWidth: 90, textAlign: 'center' },
+  navBtn: { padding: 4 },
+  navArrow: { fontSize: 20, color: colors.textMuted, lineHeight: 24 },
   summaryRow: { flexDirection: 'row', backgroundColor: colors.surface, marginHorizontal: spacing.xl, marginTop: spacing.lg, borderRadius: 14, padding: spacing.lg, gap: spacing.lg, borderWidth: 1, borderColor: colors.border },
   summaryItem: { flex: 1, alignItems: 'center' },
   summaryValue: { fontSize: fontSize.xl, fontWeight: 'bold', color: colors.primary },

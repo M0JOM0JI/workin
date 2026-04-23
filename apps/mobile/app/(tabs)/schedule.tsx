@@ -17,7 +17,6 @@ export default function ScheduleScreen() {
   const from = format(days[0], 'yyyy-MM-dd');
   const to   = format(days[6], 'yyyy-MM-dd');
 
-  // TODO: storeId 동적으로 가져오기
   const { data: schedules = [] } = useQuery({
     queryKey: ['my-schedules', from, to],
     queryFn: () => api.get(`/me/schedules?from=${from}&to=${to}`).then((r) => r.data),
