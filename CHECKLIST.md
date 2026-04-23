@@ -58,8 +58,8 @@
 |------|------|------|
 | GET /stores | ✅ | 내 매장 목록 (store 정보 포함) |
 | POST /stores | ✅ | 매장 생성 + OWNER 자동 등록 |
-| Store 모델 필드 확장 (DB 마이그레이션) | ⬜ | businessOwner, businessNumber, phone, mobilePhone 컬럼 추가 |
-| CreateStoreDto 필드 확장 | ⬜ | 사업자명, 사업자번호, 매장전화번호, 휴대폰번호 추가 |
+| Store 모델 필드 확장 (DB 마이그레이션) | ✅ | businessOwner, businessNumber, phone, mobilePhone 컬럼 추가 |
+| CreateStoreDto 필드 확장 | ✅ | 사업자명, 사업자번호, 매장전화번호, 휴대폰번호 추가 |
 | GET /stores/:id | ✅ | |
 | GET /stores/:id/staffs | ✅ | 직원 목록 (user 정보 포함) |
 | PATCH /stores/:id | ✅ | OWNER만 |
@@ -107,7 +107,7 @@
 | Zustand 인증 스토어 | ✅ | user + accessToken + stores + currentStoreId persist |
 | TanStack Query Provider | ✅ | providers.tsx |
 | 다중 매장 전환 | ⚠️ | 사이드바 select 존재하나 전환 시 데이터 리로드 검증 필요 |
-| 온보딩 리다이렉트 (매장 0개 → /onboarding/store) | ⬜ | 로그인 후 stores.length === 0 감지 → 강제 이동 |
+| 온보딩 리다이렉트 (매장 0개 → /onboarding/store) | ✅ | 로그인·가입 후 stores.length === 0 감지 → 강제 이동 |
 | 사이드바 `+ 매장 추가` 버튼 (OWNER만) | ✅ | 클릭 시 매장 추가 모달 오픈, OWNER만 노출 |
 
 ### 3-2. API 훅 (src/hooks/)
@@ -134,8 +134,8 @@
 |--------|-----|---------|------|
 | /auth/login | ✅ | ✅ | 로그인 후 user + stores 세팅 |
 | /auth/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, 자동 로그인 |
-| /onboarding/store (첫 매장 생성) | ⬜ | ⬜ | stores=0 시 강제 진입, WIREFRAME B-00 |
-| 사이드바 — 매장 추가 모달 | ✅ | ✅ | OWNER만 노출, 이름·주소·업종 입력, WIREFRAME B-11 |
+| /onboarding/store (첫 매장 생성) | ✅ | ✅ | stores=0 시 강제 진입, 전체 필드 입력 폼 |
+| 사이드바 — 매장 추가 모달 | ✅ | ✅ | OWNER만 노출, 전체 필드 입력, WIREFRAME B-11 |
 | /dashboard | ✅ | ✅ | 실시간 출근현황, 스케줄, 급여 |
 | /schedules | ✅ | ✅ | 주간 그리드 (실제 API) |
 | /schedules — 시프트 추가 모달 | ✅ | ✅ | 직원 선택·날짜·KST 시간 입력 → POST |
@@ -147,7 +147,7 @@
 | /attendance — 수동 수정 | ⬜ | ⬜ | 오너/매니저가 출퇴근 시간 직접 수정 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
 | /payroll — 직원별 상세 | ✅ | ✅ | 행 클릭 → 급여 요약 + 출퇴근 내역 모달 |
-| /settings | ✅ | ✅ | 매장 수정/삭제 (확장 필드 반영 필요) |
+| /settings | ✅ | ✅ | 매장 수정/삭제, 확장 필드(사업자명·번호·전화) 포함 |
 
 ---
 

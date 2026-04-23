@@ -41,11 +41,11 @@ export function SignupForm() {
       localStorage.setItem('accessToken', data.accessToken);
       setAuth(data.user, data.accessToken);
 
-      // 매장 목록 로드 (신규 가입은 빈 배열)
+      // 매장 목록 로드 (신규 가입은 빈 배열 → 온보딩)
       const { data: stores } = await api.get('/stores');
       setStores(stores);
 
-      router.push('/dashboard');
+      router.push(stores.length === 0 ? '/onboarding/store' : '/dashboard');
     } catch (err: any) {
       const msg = err.response?.data?.message;
       setServerError(Array.isArray(msg) ? msg[0] : (msg ?? '회원가입에 실패했습니다.'));

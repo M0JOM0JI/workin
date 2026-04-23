@@ -31,11 +31,18 @@ export function Sidebar() {
 
   // 매장 추가 모달
   const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', address: '', category: '' });
+  const [form, setForm] = useState({
+    name: '', businessOwner: '', businessNumber: '',
+    address: '', phone: '', mobilePhone: '', category: '',
+  });
   const [formError, setFormError] = useState('');
 
   const createStoreMutation = useMutation({
-    mutationFn: () => api.post('/stores', form),
+    mutationFn: () => {
+      const payload: Record<string, string> = {};
+      Object.entries(form).forEach(([k, v]) => { if (v.trim()) payload[k] = v.trim(); });
+      return api.post('/stores', payload);
+    },
     onSuccess: async () => {
       const { data: newStores } = await api.get('/stores');
       setStores(newStores);
@@ -43,7 +50,7 @@ export function Sidebar() {
       const latest = newStores[newStores.length - 1];
       if (latest) setCurrentStoreId(latest.store.id);
       setAddOpen(false);
-      setForm({ name: '', address: '', category: '' });
+      setForm({ name: '', businessOwner: '', businessNumber: '', address: '', phone: '', mobilePhone: '', category: '' });
     },
     onError: (e: any) => {
       setFormError(e.response?.data?.message ?? '매장 생성에 실패했습니다.');
@@ -51,7 +58,7 @@ export function Sidebar() {
   });
 
   function handleOpenAdd() {
-    setForm({ name: '', address: '', category: '' });
+    setForm({ name: '', businessOwner: '', businessNumber: '', address: '', phone: '', mobilePhone: '', category: '' });
     setFormError('');
     setAddOpen(true);
   }
@@ -151,30 +158,25 @@ export function Sidebar() {
           {formError && (
             <p className="text-sm text-red-500 bg-red-50 px-3 py-2 rounded-lg">{formError}</p>
           )}
-          <Input
-            label="매장명 *"
-            placeholder="예: 스타벅스 강남점"
-            value={form.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm({ ...form, name: e.target.value })
-            }
-          />
-          <Input
-            label="주소"
-            placeholder="도로명 주소"
-            value={form.address}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm({ ...form, address: e.target.value })
-            }
-          />
-          <Input
-            label="업종"
-            placeholder="예: 카페, 편의점"
-            value={form.category}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm({ ...form, category: e.target.value })
-            }
-          />
+          {[
+            { key: 'name',           label: '매장명 *',         placeholder: '예: 스타벅스 강남점' },
+            { key: 'businessOwner',  label: '사업자명 *',        placeholder: '예: 홍길동' },
+            { key: 'businessNumber', label: '사업자번호 *',      placeholder: '예: 123-45-67890' },
+            { key: 'address',        label: '주소',              placeholder: '도로명 주소' },
+            { key: 'phone',          label: '매장 전화번호',     placeholder: '예: 02-1234-5678' },
+            { key: 'mobilePhone',    label: '담당자 휴대폰번호', placeholder: '예: 010-1234-5678' },
+            { key: 'category',       label: '업종',              placeholder: '예: 카페, 편의점' },
+          ].map(({ key, label, placeholder }) => (
+            <Input
+              key={key}
+              label={label}
+              placeholder={placeholder}
+              value={(form as Record<string, string>)[key]}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                setForm({ ...form, [key]: e.target.value })
+              }
+            />
+          ))}
           <div className="flex gap-2 pt-1">
             <Button variant="ghost" className="flex-1" onClick={() => setAddOpen(false)}>
               취소

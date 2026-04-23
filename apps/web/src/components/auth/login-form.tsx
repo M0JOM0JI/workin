@@ -26,7 +26,7 @@ export function LoginForm() {
       const { data: stores } = await api.get('/stores');
       setStores(stores);
 
-      router.push('/dashboard');
+      router.push(stores.length === 0 ? '/onboarding/store' : '/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.message ?? '로그인에 실패했습니다.');
     } finally {

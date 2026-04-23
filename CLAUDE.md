@@ -13,7 +13,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 레포지토리
 
 - **GitHub**: https://github.com/M0JOM0JI/workin
-- **브랜치**: `main`
+- **기본 브랜치**: `main`
+
+## 브랜치 전략
+
+| 브랜치 | 용도 |
+|--------|------|
+| `main` | 배포 기준 브랜치 |
+| `feature/<작업명>` | 기능 개발 단위 브랜치 |
+
+**작업 흐름:**
+```bash
+git checkout -b feature/<작업명>   # 브랜치 생성
+# 작업 후
+git push origin feature/<작업명>
+gh pr create --base main           # PR 생성
+# 머지 후 브랜치 삭제
+```
+
+**네이밍 예시:**
+- `feature/onboarding-store` — 온보딩 페이지
+- `feature/store-schema` — DB 스키마 확장
+- `feature/staff-detail-modal` — 직원 상세 모달
 
 ## 로컬 개발 환경
 

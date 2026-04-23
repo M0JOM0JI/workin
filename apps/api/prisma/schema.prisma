@@ -26,13 +26,17 @@ model User {
 // ─── 매장 ───────────────────────────────────────────
 
 model Store {
-  id        String   @id @default(cuid())
-  name      String
-  address   String?
-  category  String?
-  ownerId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String   @id @default(cuid())
+  name           String
+  businessOwner  String?  // 사업자명
+  businessNumber String?  // 사업자번호
+  address        String?
+  phone          String?  // 매장 전화번호
+  mobilePhone    String?  // 담당자 휴대폰번호
+  category       String?
+  ownerId        String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   staffs      StoreStaff[]
   schedules   Schedule[]
