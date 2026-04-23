@@ -170,9 +170,9 @@
 | (auth)/login | ✅ | ✅ | SecureStore 저장 + currentStoreId 세팅 |
 | (auth)/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, KeyboardAvoidingView |
 | (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신, KST 시간 표시 |
-| (tabs)/attendance | ✅ | ✅ | 월별 출퇴근, useQuery |
-| (tabs)/schedule | ✅ | ✅ | 주간 스케줄, useQuery |
-| (tabs)/payroll | ✅ | ✅ | 월별 급여, /me/payroll |
+| (tabs)/attendance | ✅ | ✅ | 월별 출퇴근, 월 변경 네비게이션 추가 |
+| (tabs)/schedule | ✅ | ✅ | 주간 스케줄, storeId TODO 해소 |
+| (tabs)/payroll | ✅ | ✅ | 월별 급여, 월 변경 네비게이션 추가 |
 
 ### 4-3. 실기동 검증
 | 항목 | 상태 | 비고 |
@@ -287,8 +287,8 @@
 | 7 | 🟡 직원 상세·시급 수정 | 웹 /staffs 카드 클릭 → 모달, PATCH /stores/:id/staffs/:staffId |
 | 8 | 🟡 출퇴근 수동 수정 | 웹 /attendance 행 클릭 → 시간 수정 모달, PATCH API |
 | 9 | 🟡 /settings 확장 필드 반영 | 사업자명·사업자번호·전화번호 편집 UI |
-| 10 | 🟡 모바일 월 변경 네비게이션 | 출근기록·급여 탭 월 이동 버튼 |
-| 11 | 🟡 모바일 schedule storeId TODO 해소 | 동적 storeId 주입 |
+| 10 | ✅ 모바일 월 변경 네비게이션 | 출근기록·급여 탭 월 이동 버튼 |
+| 11 | ✅ 모바일 schedule storeId TODO 해소 | /me/schedules 사용, TODO 주석 제거 |
 | 12 | 🟢 API 테스트 작성 | Jest 유닛 + E2E (auth, stores, payroll) |
 | 13 | 🟢 수동 통합 테스트 | 웹(오너) + 모바일(알바생) 전체 흐름 시나리오 |
 | 14 | 🔵 Android/iOS 앱 — 사전 준비 | 아이콘·스플래시·EAS CLI·app.json (웹 완성 후) |
