@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-22 (Android/iOS 하이브리드 앱 계획 추가)
+> 마지막 갱신: 2026-04-23 (출퇴근 수동 수정 구현)
 
 ---
 
@@ -84,7 +84,7 @@
 | POST /stores/:id/attendance/clock-out | ✅ | |
 | GET /stores/:id/attendance | ✅ | date 쿼리 파라미터 지원 |
 | GET /me/attendance | ✅ | |
-| PATCH /stores/:id/attendance/:id (수동 수정) | ⬜ | 오너/매니저가 clockIn·clockOut 직접 수정 |
+| PATCH /stores/:id/attendance/:id (수동 수정) | ✅ | 오너/매니저가 clockIn·clockOut 직접 수정 |
 
 ### 2-6. Payroll 모듈
 | 항목 | 상태 | 비고 |
@@ -144,7 +144,7 @@
 | /staffs — 초대 코드 발급 UI | ✅ | ✅ | 코드 발급 모달, 클립보드 복사, 새 코드 발급 |
 | /staffs — 직원 상세·시급 수정 | ✅ | ✅ | 카드 클릭 → 상세 모달, 시급 수정, 퇴직 처리 |
 | /attendance | ✅ | ✅ | 30초 자동 갱신 |
-| /attendance — 수동 수정 | ⬜ | ⬜ | 오너/매니저가 출퇴근 시간 직접 수정 |
+| /attendance — 수동 수정 | ✅ | ✅ | 오너/매니저가 출퇴근 시간 직접 수정 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
 | /payroll — 직원별 상세 | ✅ | ✅ | 행 클릭 → 급여 요약 + 출퇴근 내역 모달 |
 | /settings | ✅ | ✅ | 매장 수정/삭제, 확장 필드(사업자명·번호·전화) 포함 |

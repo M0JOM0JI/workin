@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../common/prisma/prisma.service';
 import { StoresService } from '../stores/stores.service';
+import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
@@ -51,6 +52,21 @@ export class AttendanceService {
     return this.prisma.attendance.update({
       where: { id: attendance.id },
       data: { clockOut: new Date() },
+    });
+  }
+
+  async updateAttendance(storeId: string, userId: string, attendanceId: string, dto: UpdateAttendanceDto) {
+    await this.storesService.assertRole(storeId, userId, [Role.OWNER, Role.MANAGER]);
+    return this.prisma.attendance.update({
+      where: { id: attendanceId, storeId },
+      data: {
+        ...(dto.clockIn  !== undefined && { clockIn:  new Date(dto.clockIn) }),
+        ...(dto.clockOut !== undefined && { clockOut: dto.clockOut ? new Date(dto.clockOut) : null }),
+      },
+      include: {
+        staff: { include: { user: { select: { id: true, name: true } } } },
+        schedule: { select: { id: true, startAt: true, endAt: true } },
+      },
     });
   }
 
