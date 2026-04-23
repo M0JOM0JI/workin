@@ -67,7 +67,7 @@
 | POST /stores/:id/invite | ✅ | Redis TTL 24h 초대 코드 발급 |
 | POST /stores/join | ✅ | 코드 검증 → 멤버 등록 → 코드 삭제 |
 | assertRole / assertMember 헬퍼 | ✅ | |
-| PATCH /stores/:id/staffs/:staffId (시급·퇴직 처리) | ⬜ | hourlyWage 수정, leftAt 업데이트 |
+| PATCH /stores/:id/staffs/:staffId (시급·퇴직 처리) | ✅ | hourlyWage 수정, leftAt 업데이트 |
 
 ### 2-4. Schedules 모듈
 | 항목 | 상태 | 비고 |
@@ -142,7 +142,7 @@
 | /schedules — 블록 삭제 | ✅ | ✅ | 블록 클릭 → 삭제 확인 모달 → DELETE |
 | /staffs | ✅ | ✅ | 재직/퇴직 필터 |
 | /staffs — 초대 코드 발급 UI | ✅ | ✅ | 코드 발급 모달, 클립보드 복사, 새 코드 발급 |
-| /staffs — 직원 상세·시급 수정 | ⬜ | ⬜ | 카드 클릭 → 시급 변경·퇴직 처리 |
+| /staffs — 직원 상세·시급 수정 | ✅ | ✅ | 카드 클릭 → 상세 모달, 시급 수정, 퇴직 처리 |
 | /attendance | ✅ | ✅ | 30초 자동 갱신 |
 | /attendance — 수동 수정 | ⬜ | ⬜ | 오너/매니저가 출퇴근 시간 직접 수정 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |

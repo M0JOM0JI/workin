@@ -39,3 +39,4 @@ prisma/migrations/dev/
 
 # Expo
 .expo/
+.claude/worktrees/
