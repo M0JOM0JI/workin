@@ -208,7 +208,56 @@
 
 ### 지원 플랫폼
 - **웹**: PC 브라우저 (사장 중심, 스케줄 작성 최적화)
-- **모바일 앱**: iOS / Android (알바생 중심, 출근 체크 최적화)
+- **모바일 앱**: iOS / Android — **하이브리드 방식** (웹 개발 완료 후 진행)
+
+### 모바일 앱 전략 — 하이브리드 (WebView)
+
+> **진행 시점**: 웹·API 전체 기능 완성 후 착수
+
+웹 앱(Next.js)을 Expo WebView로 래핑해 Android / iOS 앱을 배포한다.  
+별도 네이티브 코드베이스를 유지하지 않으며, 웹 기능 추가 시 앱도 자동 반영된다.
+
+```
+Next.js Web App (반응형 + PWA)
+        ↓  Expo WebView 래핑
+  ┌─────────────┐    ┌─────────────┐
+  │  Android    │    │    iOS      │
+  │  (APK/AAB)  │    │   (IPA)     │
+  │ Google Play │    │  App Store  │
+  └─────────────┘    └─────────────┘
+        공통: 푸시 알림, 딥링크, 아이콘/스플래시
+```
+
+#### Android 앱
+| 항목 | 내용 |
+|------|------|
+| 빌드 도구 | EAS Build (Expo Application Services) |
+| 배포 형식 | APK (테스트) / AAB (Play Store) |
+| 스토어 | Google Play Console |
+| 계정 | Google Play 개발자 계정 ($25 1회) |
+| 최소 지원 OS | Android 8.0 (API 26) 이상 |
+| 핵심 네이티브 기능 | 푸시 알림 (FCM), 딥링크 |
+
+#### iOS 앱
+| 항목 | 내용 |
+|------|------|
+| 빌드 도구 | EAS Build |
+| 배포 형식 | IPA → TestFlight (테스트) / App Store |
+| 스토어 | Apple App Store Connect |
+| 계정 | Apple Developer Program ($99/년) |
+| 최소 지원 OS | iOS 15 이상 |
+| 핵심 네이티브 기능 | 푸시 알림 (APNs), 딥링크 |
+
+#### 공통 작업 목록
+| 단계 | 작업 |
+|------|------|
+| 1. 웹 모바일 최적화 | 반응형 UI 점검, 터치 이벤트, 뷰포트 설정, PWA manifest |
+| 2. Expo Shell 구성 | WebView 컴포넌트로 웹 URL 로드, 토큰 Bridge(웹↔네이티브) |
+| 3. 앱 정체성 | 아이콘(1024×1024), 스플래시 화면, 앱 이름·번들 ID |
+| 4. 푸시 알림 | Expo Notifications, FCM(Android), APNs(iOS) 키 등록 |
+| 5. 딥링크 | 초대 코드 링크 클릭 → 앱 내 해당 화면 이동 |
+| 6. 빌드 & 테스트 | EAS Build 로컬/클라우드, 실기기 테스트 |
+| 7. 스토어 등록 | 스크린샷, 설명, 개인정보 처리방침, 심사 제출 |
 
 ### 권장 기술 스택 (확정 전 검토 필요)
 

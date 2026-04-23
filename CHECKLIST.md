@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-22 (Docker 환경 추가)
+> 마지막 갱신: 2026-04-22 (Android/iOS 하이브리드 앱 계획 추가)
 
 ---
 
@@ -108,7 +108,7 @@
 | TanStack Query Provider | ✅ | providers.tsx |
 | 다중 매장 전환 | ⚠️ | 사이드바 select 존재하나 전환 시 데이터 리로드 검증 필요 |
 | 온보딩 리다이렉트 (매장 0개 → /onboarding/store) | ⬜ | 로그인 후 stores.length === 0 감지 → 강제 이동 |
-| 사이드바 `+ 매장 추가` 버튼 (OWNER만) | ⬜ | 클릭 시 매장 추가 모달 오픈 |
+| 사이드바 `+ 매장 추가` 버튼 (OWNER만) | ✅ | 클릭 시 매장 추가 모달 오픈, OWNER만 노출 |
 
 ### 3-2. API 훅 (src/hooks/)
 | 훅 | 상태 | 비고 |
@@ -205,22 +205,95 @@
 
 ---
 
-## 7. 다음 작업 우선순위
+## 7. Android / iOS 하이브리드 앱
+
+> ⚠️ **선행 조건**: 웹 대시보드 전체 기능 완성 후 진행 (웹→WebView 래핑 전략)
+> 상세 계획: [`docs/PRD.md`](docs/PRD.md) 모바일 앱 전략 섹션 / [`docs/WIREFRAME.md`](docs/WIREFRAME.md) A-01~A-06
+
+### 7-1. 공통 사전 준비
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Next.js PWA manifest 설정 | ⬜ | `manifest.json`, 아이콘, 스플래시 색상 |
+| 앱 아이콘 디자인 (1024×1024 PNG) | ⬜ | Android / iOS 공용 마스터 소스 |
+| 스플래시 스크린 이미지 | ⬜ | 배경색 + 로고, EAS 빌드용 |
+| EAS CLI 설치 및 로그인 | ⬜ | `npm install -g eas-cli && eas login` |
+| `app.json` / `eas.json` 설정 | ⬜ | bundleIdentifier, package명, 프로필 설정 |
+
+### 7-2. Expo WebView Shell (A-02)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| `expo-webview` 설치 | ⬜ | `npx expo install react-native-webview` |
+| WebView Shell 컴포넌트 구현 | ⬜ | `apps/mobile/app/webview-shell.tsx` |
+| JS Bridge — `SET_TOKEN` | ⬜ | 웹→앱 토큰 전달 (SecureStore 저장) |
+| JS Bridge — `REQUEST_PUSH_PERMISSION` | ⬜ | 앱이 푸시 권한 요청 트리거 |
+| JS Bridge — `CLEAR_AUTH` | ⬜ | 로그아웃 시 SecureStore 초기화 |
+| 네이티브 뒤로가기 지원 (Android) | ⬜ | `onAndroidHardwareBackPress` 처리 |
+| 네트워크 에러 화면 | ⬜ | 오프라인 시 재시도 안내 |
+
+### 7-3. 푸시 알림 (A-03)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| `expo-notifications` 설치 | ⬜ | EAS 빌드 필요 (Expo Go 미지원) |
+| FCM 프로젝트 설정 (Android) | ⬜ | Firebase Console → `google-services.json` |
+| APNs 인증서 설정 (iOS) | ⬜ | Apple Developer → `.p8` 키 → EAS Secret |
+| 푸시 권한 요청 로직 | ⬜ | Bridge 연동 또는 앱 시작 시 요청 |
+| API — 푸시 토큰 저장 엔드포인트 | ⬜ | `PATCH /auth/me` 또는 별도 엔드포인트 |
+| 알림 발송 — 출근 예정 (30분 전) | ⬜ | NestJS 스케줄러 (@nestjs/schedule) |
+| 알림 발송 — 급여 확정 | ⬜ | 급여 마감 시 일괄 발송 |
+
+### 7-4. 딥링크 (A-04)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 딥링크 스킴 설정 (`workin://`) | ⬜ | `app.json` scheme 추가 |
+| Universal Links 설정 (iOS) | ⬜ | `apple-app-site-association` 파일, 도메인 필요 |
+| App Links 설정 (Android) | ⬜ | `assetlinks.json` 파일, 도메인 필요 |
+| 초대 링크 처리 (`workin://join?code=XXXX`) | ⬜ | 앱 실행 → `/join` 화면 → `POST /stores/join` |
+| 딥링크 미설치 시 웹 폴백 | ⬜ | 앱 미설치 → 웹 초대 페이지로 이동 |
+
+### 7-5. Android — Google Play 배포 (A-05)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Google Play Console 계정 생성 | ⬜ | 개발자 등록비 $25 (1회) |
+| EAS Build — Android 프로파일 설정 | ⬜ | `eas.json` production 프로파일 |
+| AAB 빌드 (`eas build --platform android`) | ⬜ | 서명 키는 EAS 관리 또는 자체 keystore |
+| 내부 테스트 트랙 업로드 | ⬜ | Play Console → 내부 테스트 → APK/AAB 업로드 |
+| 스토어 등록 정보 작성 | ⬜ | 앱 이름·설명·스크린샷·아이콘·카테고리 |
+| 개인정보처리방침 URL 등록 | ⬜ | 정책 페이지 필수 |
+| 프로덕션 트랙 출시 | ⬜ | 검토 후 출시 (보통 1~3일) |
+
+### 7-6. iOS — App Store 배포 (A-06)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Apple Developer Program 가입 | ⬜ | $99/년 |
+| App Store Connect 앱 등록 | ⬜ | Bundle ID, 앱 이름 |
+| EAS Build — iOS 프로파일 설정 | ⬜ | `eas.json` production 프로파일, AdHoc/AppStore |
+| IPA 빌드 (`eas build --platform ios`) | ⬜ | EAS가 인증서·프로파일 자동 관리 가능 |
+| TestFlight 업로드 및 내부 테스트 | ⬜ | `eas submit` 또는 Transporter 사용 |
+| 스토어 등록 정보 작성 | ⬜ | 스크린샷 (6.5인치·5.5인치), 설명·키워드 |
+| App Review 제출 | ⬜ | 검토 1~3일, 거절 시 피드백 대응 |
+
+---
+
+## 8. 다음 작업 우선순위
 
 | 순서 | 작업 | 세부 내용 |
 |------|------|----------|
 | 1 | ✅ DB / API 기동 | PostgreSQL·Redis 설치, migrate, API·웹 서버 실행 완료 |
 | 2 | ✅ 시드 데이터 | 5명(오너+매니저+알바3)·53스케줄·53출퇴근, KST 시간 정확 |
-| 3 | 🔴 매장 생성 — DB 스키마 확장 | businessOwner·businessNumber·phone·mobilePhone 컬럼 추가 마이그레이션 |
-| 4 | 🔴 매장 생성 — 온보딩 페이지 | /onboarding/store (stores=0 → 강제 진입, B-00) |
-| 5 | 🔴 매장 생성 — 사이드바 추가 버튼 | 사이드바 `+ 매장 추가` + 모달 (B-11), OWNER만 |
-| 6 | 🔴 회원가입 페이지 | /auth/signup (웹 + 모바일) |
-| 7 | 🔴 스케줄 추가/삭제 UI | 시프트 추가 모달 + 블록 삭제 |
-| 8 | 🔴 알바생 초대 UI | 초대 코드 발급 + 클립보드 복사 |
-| 9 | 🔴 모바일 실기동 검증 | Expo 앱 전 화면 동작 확인 + KST 시간 표시 |
-| 10 | 🟡 직원 상세·시급 수정 | 웹 /staffs 모달, PATCH API |
-| 11 | 🟡 출퇴근 수동 수정 | 웹 /attendance, PATCH API |
-| 12 | 🟡 급여 상세 | 웹 /payroll 직원별 주차 breakdown |
-| 13 | 🟡 /settings 확장 필드 반영 | 사업자명·사업자번호·전화번호 편집 UI |
-| 14 | 🟢 API 테스트 작성 | Jest 유닛 + E2E |
-| 15 | 🟢 수동 통합 테스트 | 웹·모바일 전체 흐름 시나리오 |
+| 3 | ✅ 회원가입 (웹·모바일) | /auth/signup 구현 완료 |
+| 4 | ✅ 주요 UI 연결 | 스케줄 추가/삭제, 초대 코드 발급, 급여 상세, 사이드바 매장 추가 |
+| 5 | 🔴 매장 생성 — DB 스키마 확장 | businessOwner·businessNumber·phone·mobilePhone 컬럼 추가 마이그레이션 |
+| 6 | 🔴 매장 생성 — 온보딩 페이지 | /onboarding/store (stores=0 → 강제 진입) |
+| 7 | 🟡 직원 상세·시급 수정 | 웹 /staffs 카드 클릭 → 모달, PATCH /stores/:id/staffs/:staffId |
+| 8 | 🟡 출퇴근 수동 수정 | 웹 /attendance 행 클릭 → 시간 수정 모달, PATCH API |
+| 9 | 🟡 /settings 확장 필드 반영 | 사업자명·사업자번호·전화번호 편집 UI |
+| 10 | 🟡 모바일 월 변경 네비게이션 | 출근기록·급여 탭 월 이동 버튼 |
+| 11 | 🟡 모바일 schedule storeId TODO 해소 | 동적 storeId 주입 |
+| 12 | 🟢 API 테스트 작성 | Jest 유닛 + E2E (auth, stores, payroll) |
+| 13 | 🟢 수동 통합 테스트 | 웹(오너) + 모바일(알바생) 전체 흐름 시나리오 |
+| 14 | 🔵 Android/iOS 앱 — 사전 준비 | 아이콘·스플래시·EAS CLI·app.json (웹 완성 후) |
+| 15 | 🔵 Android/iOS 앱 — WebView Shell | Bridge 구현, 뒤로가기, 오프라인 처리 |
+| 16 | 🔵 Android/iOS 앱 — 푸시 알림 | FCM·APNs 설정, 알림 발송 로직 |
+| 17 | 🔵 Android/iOS 앱 — 딥링크 | 초대 링크, Universal/App Links |
+| 18 | 🔵 Android/iOS 앱 — Google Play 배포 | EAS Build → AAB → Play Console |
+| 19 | 🔵 Android/iOS 앱 — App Store 배포 | EAS Build → IPA → TestFlight → App Store |
