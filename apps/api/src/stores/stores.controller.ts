@@ -5,6 +5,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
 
 @ApiTags('매장')
 @ApiBearerAuth()
@@ -47,6 +48,17 @@ export class StoresController {
   @ApiOperation({ summary: '매장 삭제 (오너 전용)' })
   remove(@Param('id') id: string, @CurrentUser('id') userId: string) {
     return this.storesService.remove(id, userId);
+  }
+
+  @Patch(':id/staffs/:staffId')
+  @ApiOperation({ summary: '직원 시급·퇴직 처리 (오너/매니저)' })
+  updateStaff(
+    @Param('id') storeId: string,
+    @Param('staffId') staffId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateStaffDto,
+  ) {
+    return this.storesService.updateStaff(storeId, userId, staffId, dto);
   }
 
   @Post(':id/invite')

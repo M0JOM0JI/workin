@@ -8,6 +8,7 @@ import { PrismaService } from '../common/prisma/prisma.service';
 import { RedisService } from '../common/redis/redis.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
+import { UpdateStaffDto } from './dto/update-staff.dto';
 
 const INVITE_TTL = 60 * 60 * 24; // 24시간
 
@@ -59,6 +60,18 @@ export class StoresService {
     await this.assertRole(storeId, userId, [Role.OWNER]);
     await this.prisma.store.delete({ where: { id: storeId } });
     return { message: '매장이 삭제되었습니다.' };
+  }
+
+  async updateStaff(storeId: string, userId: string, staffId: string, dto: UpdateStaffDto) {
+    await this.assertRole(storeId, userId, [Role.OWNER, Role.MANAGER]);
+    return this.prisma.storeStaff.update({
+      where: { id: staffId, storeId },
+      data: {
+        ...(dto.hourlyWage !== undefined && { hourlyWage: dto.hourlyWage }),
+        ...(dto.leftAt !== undefined && { leftAt: dto.leftAt ? new Date(dto.leftAt) : null }),
+      },
+      include: { user: { select: { id: true, name: true, email: true, phone: true } } },
+    });
   }
 
   async generateInviteCode(storeId: string, userId: string, role: string) {
