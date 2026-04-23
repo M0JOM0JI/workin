@@ -15,7 +15,11 @@ export interface StoreItem {
   store: {
     id: string;
     name: string;
+    businessOwner?: string | null;
+    businessNumber?: string | null;
     address?: string | null;
+    phone?: string | null;
+    mobilePhone?: string | null;
     category?: string | null;
   };
 }

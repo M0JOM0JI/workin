@@ -8,6 +8,27 @@ import { Card, Button, Input, Spinner } from '@/components/ui';
 import { useAuthStore } from '@/store/auth.store';
 import { api } from '@/lib/api';
 
+interface StoreDetail {
+  id: string;
+  name: string;
+  businessOwner?: string | null;
+  businessNumber?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  mobilePhone?: string | null;
+  category?: string | null;
+}
+
+const FIELDS: { key: keyof Omit<StoreDetail, 'id'>; label: string; placeholder: string }[] = [
+  { key: 'name',           label: '매장명',           placeholder: '예: 스타벅스 강남점' },
+  { key: 'businessOwner',  label: '사업자명',          placeholder: '예: 홍길동' },
+  { key: 'businessNumber', label: '사업자번호',        placeholder: '예: 123-45-67890' },
+  { key: 'address',        label: '주소',              placeholder: '도로명 주소' },
+  { key: 'phone',          label: '매장 전화번호',     placeholder: '예: 02-1234-5678' },
+  { key: 'mobilePhone',    label: '담당자 휴대폰번호', placeholder: '예: 010-1234-5678' },
+  { key: 'category',       label: '업종',              placeholder: '예: 카페, 편의점' },
+];
+
 export default function SettingsPage() {
   const router = useRouter();
   const qc = useQueryClient();
@@ -17,20 +38,39 @@ export default function SettingsPage() {
     queryKey: ['store', currentStoreId],
     queryFn: async () => {
       const { data } = await api.get(`/stores/${currentStoreId}`);
-      return data as { id: string; name: string; address?: string; category?: string };
+      return data as StoreDetail;
     },
     enabled: !!currentStoreId,
   });
 
-  const [form, setForm] = useState({ name: '', address: '', category: '' });
+  const [form, setForm] = useState<Record<string, string>>({
+    name: '', businessOwner: '', businessNumber: '',
+    address: '', phone: '', mobilePhone: '', category: '',
+  });
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (store) setForm({ name: store.name, address: store.address ?? '', category: store.category ?? '' });
+    if (store) {
+      setForm({
+        name:           store.name ?? '',
+        businessOwner:  store.businessOwner ?? '',
+        businessNumber: store.businessNumber ?? '',
+        address:        store.address ?? '',
+        phone:          store.phone ?? '',
+        mobilePhone:    store.mobilePhone ?? '',
+        category:       store.category ?? '',
+      });
+    }
   }, [store]);
 
   const updateMutation = useMutation({
-    mutationFn: () => api.patch(`/stores/${currentStoreId}`, form),
+    mutationFn: () => {
+      const payload: Record<string, string | null> = {};
+      FIELDS.forEach(({ key }) => {
+        payload[key] = form[key].trim() || null;
+      });
+      return api.patch(`/stores/${currentStoreId}`, payload);
+    },
     onSuccess: async () => {
       qc.invalidateQueries({ queryKey: ['store', currentStoreId] });
       const { data: stores } = await api.get('/stores');
@@ -69,27 +109,17 @@ export default function SettingsPage() {
             <div className="flex justify-center py-6"><Spinner /></div>
           ) : (
             <div className="space-y-3">
-              <Input
-                label="매장명"
-                value={form.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setForm({ ...form, name: e.target.value })
-                }
-              />
-              <Input
-                label="주소"
-                value={form.address}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setForm({ ...form, address: e.target.value })
-                }
-              />
-              <Input
-                label="업종"
-                value={form.category}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setForm({ ...form, category: e.target.value })
-                }
-              />
+              {FIELDS.map(({ key, label, placeholder }) => (
+                <Input
+                  key={key}
+                  label={label}
+                  placeholder={placeholder}
+                  value={form[key]}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setForm({ ...form, [key]: e.target.value })
+                  }
+                />
+              ))}
             </div>
           )}
           <Button
