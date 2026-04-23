@@ -1,8 +1,9 @@
-import { Controller, Get, Post, Body, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Body, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { AttendanceService } from './attendance.service';
+import { UpdateAttendanceDto } from './dto/update-attendance.dto';
 
 @ApiTags('출퇴근')
 @ApiBearerAuth()
@@ -41,6 +42,18 @@ export class AttendanceController {
     @CurrentUser('id') userId: string,
   ) {
     return this.attendanceService.clockOut(storeId, userId);
+  }
+
+  // 출퇴근 수동 수정 (오너/매니저)
+  @Patch('stores/:storeId/attendance/:attendanceId')
+  @ApiOperation({ summary: '출퇴근 시간 수동 수정 (오너/매니저)' })
+  updateAttendance(
+    @Param('storeId') storeId: string,
+    @Param('attendanceId') attendanceId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: UpdateAttendanceDto,
+  ) {
+    return this.attendanceService.updateAttendance(storeId, userId, attendanceId, dto);
   }
 
   // 내 출퇴근 이력 (알바생)
