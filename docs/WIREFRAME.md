@@ -1,18 +1,22 @@
 # Workin 화면 설계서 (Wireframe)
 
-> 작성일: 2026-04-20 | 최종 수정: 2026-04-22 | 버전: v0.2
+> 작성일: 2026-04-20 | 최종 수정: 2026-04-22 | 버전: v0.3
 
 ---
 
 ## 화면 목록
 
-### 공통
-- S-00. 스플래시
-- S-01. 온보딩 (역할 선택)
-- S-02. 회원가입
-- S-03. 로그인
+> **플랫폼 구분**
+> - `[WEB]` — Next.js 웹 대시보드 (사장/매니저 중심)
+> - `[APP]` — Android / iOS 하이브리드 앱 (알바생 중심, 웹 개발 완료 후 착수)
 
-### 오너 (Owner)
+### 공통
+- S-00. 스플래시 `[APP]`
+- S-01. 온보딩 (역할 선택) `[APP]`
+- S-02. 회원가입 `[WEB]` `[APP]`
+- S-03. 로그인 `[WEB]` `[APP]`
+
+### 오너 (Owner) `[WEB]`
 - B-00. 온보딩 — 매장 생성 (첫 매장, 매장 없을 때만 표시)
 - B-01. 홈 / 대시보드
 - B-02. 스케줄 관리 (주간)
@@ -26,19 +30,29 @@
 - B-10. 매장 설정 (오너 전용)
 - B-11. 매장 추가 모달 (사이드바 버튼)
 
-### 매니저 (Manager)
+### 매니저 (Manager) `[WEB]`
 - M-01. 매니저 합류 플로우 (초대 코드 입력)
 - M-02. 매니저 홈 (B-01과 동일 UI, 권한 차이만 있음)
 - M-03. 알바생 상세 (매니저 승격 버튼 없음)
 - M-04. 알바생 초대 (알바생 역할만 발급)
 - M-05. 매장 설정 (읽기 전용)
 
-### 알바생 (Staff)
+### 알바생 (Staff) `[APP]`
 - S-10. 홈 (출근 체크)
 - S-11. 스케줄 확인
 - S-12. 출근 기록
 - S-13. 급여 확인
 - S-14. 프로필 / 설정
+
+### Android / iOS 앱 전용 `[APP]`
+> 웹 개발 전체 완료 후 착수. Next.js 웹을 Expo WebView로 래핑하는 하이브리드 방식.
+
+- A-01. 앱 스플래시 & 아이콘
+- A-02. WebView Shell (웹 URL 로드, 토큰 Bridge)
+- A-03. 푸시 알림 (FCM/APNs)
+- A-04. 딥링크 (초대 코드 링크 → 앱 내 이동)
+- A-05. Google Play Store 등록
+- A-06. Apple App Store 등록
 
 ---
 
@@ -811,3 +825,157 @@
 | 매장 정보 편집 | ✅ | ❌(읽기만) | ❌ |
 | 매장 생성/삭제 | ✅ | ❌ | ❌ |
 | 매장 전환 | ✅ | ✅(소속만) | ❌ |
+
+---
+
+## Android / iOS 앱 화면 (하이브리드)
+
+> **착수 조건**: 웹·API 전체 기능 완성 후  
+> **방식**: Next.js 웹 → Expo WebView 래핑 → EAS Build → 스토어 제출
+
+---
+
+### A-01. 앱 스플래시 & 아이콘
+```
+┌─────────────────────┐
+│                     │
+│                     │
+│      [Workin]       │
+│       아이콘        │  ← 1024×1024 PNG
+│                     │
+│    ─────────────    │  ← 스플래시 배경
+│                     │
+└─────────────────────┘
+```
+**산출물**
+- 앱 아이콘: 1024×1024 (Android adaptive, iOS 다양한 사이즈 자동 생성)
+- 스플래시 이미지: 1284×2778 (기준), 배경색 `#2563eb`
+- `app.json` 설정: `name`, `bundleIdentifier`(iOS), `package`(Android)
+
+---
+
+### A-02. WebView Shell
+```
+Expo App
+└── <WebView
+      source={{ uri: 'https://workin.app' }}  ← 배포된 웹 URL
+      onMessage={handleBridgeMessage}          ← 웹 → 네이티브 통신
+    />
+```
+**Bridge 통신 항목**
+| 웹 → 앱 | 용도 |
+|---------|------|
+| `SET_TOKEN` | 로그인 시 토큰을 SecureStore에 저장 |
+| `REQUEST_PUSH_PERMISSION` | 푸시 알림 권한 요청 트리거 |
+| `CLEAR_AUTH` | 로그아웃 시 SecureStore 초기화 |
+
+**앱 → 웹**
+| 앱 → 웹 | 용도 |
+|---------|------|
+| `PUSH_TOKEN` | FCM/APNs 토큰을 웹(API)에 전달 |
+
+---
+
+### A-03. 푸시 알림
+
+**Android (FCM)**
+```
+Google Firebase Console
+  └─ 프로젝트 생성
+       └─ google-services.json → apps/mobile/ 배치
+            └─ Expo Notifications 설정
+```
+
+**iOS (APNs)**
+```
+Apple Developer Console
+  └─ Push Notification 인증서 or Key (.p8)
+       └─ Expo Push Notification 서비스에 등록
+```
+
+**알림 종류**
+| 이벤트 | 수신자 | 내용 |
+|--------|--------|------|
+| 출근 30분 전 | 알바생 | "오늘 09:00 출근 예정입니다" |
+| 초대 코드 발급 | 오너/매니저 | "새 초대 코드가 발급되었습니다" |
+| 급여 확정 | 알바생 | "N월 급여가 확정되었습니다 ₩000,000" |
+
+---
+
+### A-04. 딥링크
+
+**초대 링크 형식**
+```
+workin://join?code=A1B2-C3D4
+https://workin.app/join?code=A1B2-C3D4  ← Universal Link (iOS) / App Link (Android)
+```
+- 앱 미설치: 웹 브라우저로 fallback
+- 앱 설치: 앱 내 초대 코드 입력 화면으로 이동
+
+---
+
+### A-05. Google Play Store 등록
+
+**필요 항목**
+| 항목 | 내용 |
+|------|------|
+| 개발자 계정 | Google Play Console ($25 1회) |
+| 앱 번들 | EAS Build → `.aab` 파일 |
+| 스크린샷 | 폰(최소 2장), 태블릿 선택 |
+| 앱 설명 | 국문 (짧은설명 80자, 전체설명 4000자) |
+| 개인정보 처리방침 URL | 필수 |
+| 콘텐츠 등급 | IARC 설문 작성 |
+| 앱 카테고리 | 비즈니스 |
+
+**빌드 명령**
+```bash
+eas build --platform android --profile production
+eas submit --platform android
+```
+
+---
+
+### A-06. Apple App Store 등록
+
+**필요 항목**
+| 항목 | 내용 |
+|------|------|
+| 개발자 계정 | Apple Developer Program ($99/년) |
+| 앱 번들 | EAS Build → `.ipa` 파일 |
+| 스크린샷 | 6.7인치(필수), 6.5인치, 5.5인치, iPad(선택) |
+| 앱 설명 | 국문 (프로모션 170자, 전체 4000자) |
+| 개인정보 처리방침 URL | 필수 |
+| 앱 심사 노트 | 테스트 계정 제공 |
+| 카테고리 | Business |
+
+**빌드 명령**
+```bash
+eas build --platform ios --profile production
+eas submit --platform ios
+```
+
+**심사 소요 시간**: 통상 1~3 영업일 (첫 제출 기준)
+
+---
+
+### 앱 개발 순서 요약
+
+```
+① 웹 반응형 UI 점검 (모바일 뷰포트 최적화)
+       ↓
+② Next.js PWA 설정 (manifest.json, 오프라인 지원)
+       ↓
+③ Expo WebView Shell 구성 (Bridge, 토큰 처리)
+       ↓
+④ 앱 아이콘 / 스플래시 제작
+       ↓
+⑤ 푸시 알림 연동 (FCM / APNs)
+       ↓
+⑥ 딥링크 설정
+       ↓
+⑦ EAS Build — Android (.aab) + iOS (.ipa)
+       ↓
+⑧ 실기기 테스트 (TestFlight + Android 내부 테스트)
+       ↓
+⑨ 스토어 제출 — Google Play + App Store
+```
