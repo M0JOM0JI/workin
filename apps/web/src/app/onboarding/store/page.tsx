@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useMutation } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -21,6 +21,16 @@ type FormKey = (typeof FIELDS)[number]['key'];
 export default function OnboardingStorePage() {
   const router = useRouter();
   const { setStores, setCurrentStoreId } = useAuthStore();
+
+  // 뒤로가기 차단: history 스택에 현재 페이지를 쌓아두고 popstate 가로채기
+  useEffect(() => {
+    window.history.pushState(null, '', window.location.href);
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const [form, setForm] = useState<Record<FormKey, string>>({
     name: '', businessOwner: '', businessNumber: '',
