@@ -65,8 +65,6 @@ export default function HomeScreen() {
   const qc = useQueryClient();
   const { user, currentStoreId } = useAuthStore();
 
-  // 소속 매장 없으면 온보딩 화면
-  if (!currentStoreId) return <NoStoreScreen />;
   const today = format(new Date(), 'yyyy.MM.dd EEE', { locale: ko });
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const yearMonth = format(new Date(), 'yyyy-MM');
@@ -83,15 +81,15 @@ export default function HomeScreen() {
           },
         })
         .then((r) => r.data),
-    enabled: !!user,
+    enabled: !!user && !!currentStoreId,
   });
 
-  // 오늘 출퇴근 기록
-  const { data: attendances = [], isLoading: loadingAtt } = useQuery({
+  // 오늘 출퇴근 기록 (알바생은 /me/attendance 사용)
+  const { data: myAttendances = [], isLoading: loadingAtt } = useQuery({
     queryKey: ['my-attendance-today', currentStoreId, todayStr],
     queryFn: () =>
       api
-        .get(`/stores/${currentStoreId}/attendance`, { params: { date: todayStr } })
+        .get(`/me/attendance`, { params: { yearMonth } })
         .then((r) => r.data),
     enabled: !!currentStoreId,
     refetchInterval: 30_000,
@@ -102,13 +100,13 @@ export default function HomeScreen() {
     queryKey: ['my-payroll', yearMonth],
     queryFn: () =>
       api.get('/me/payroll', { params: { yearMonth } }).then((r) => r.data),
-    enabled: !!user,
+    enabled: !!user && !!currentStoreId,
   });
   const totalNet: number = payrollList.reduce((acc: number, r: any) => acc + (r.netPay ?? 0), 0);
 
-  // 현재 로그인한 유저의 출퇴근 상태
-  const myAttendance = attendances.find(
-    (a: any) => a.staff?.user?.id === user?.id && !a.clockOut,
+  // 오늘 출근 중인 기록 (clockOut 없는 오늘 레코드)
+  const myAttendance = myAttendances.find(
+    (a: any) => !a.clockOut && a.clockIn?.startsWith(todayStr),
   );
   const isClockedIn = !!myAttendance;
 
@@ -134,6 +132,9 @@ export default function HomeScreen() {
 
   const todaySchedule: any = schedules[0];
   const isPending = clockInMutation.isPending || clockOutMutation.isPending;
+
+  // 소속 매장 없으면 온보딩 화면 (hooks 아래에서 처리)
+  if (!currentStoreId) return <NoStoreScreen />;
 
   return (
     <View style={styles.container}>
