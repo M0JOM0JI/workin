@@ -169,7 +169,7 @@
 |------|-----|---------|------|
 | (auth)/login | ✅ | ✅ | SecureStore 저장 + currentStoreId 세팅 |
 | (auth)/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, KeyboardAvoidingView |
-| (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신, KST 시간 표시 |
+| (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신, KST 시간 표시, stores=0 초대코드 입력 온보딩 |
 | (tabs)/attendance | ✅ | ✅ | 월별 출퇴근, 월 변경 네비게이션 추가 |
 | (tabs)/schedule | ✅ | ✅ | 주간 스케줄, storeId TODO 해소 |
 | (tabs)/payroll | ✅ | ✅ | 월별 급여, 월 변경 네비게이션 추가 |

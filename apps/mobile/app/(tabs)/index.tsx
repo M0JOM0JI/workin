@@ -1,14 +1,72 @@
-import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/auth.store';
 import { format, startOfDay, endOfDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { formatKRW, formatTime } from '@workin/utils';
 
+function NoStoreScreen() {
+  const { setCurrentStoreId } = useAuthStore();
+  const [code, setCode] = useState('');
+  const [error, setError] = useState('');
+
+  const joinMutation = useMutation({
+    mutationFn: () => api.post('/stores/join', { code: code.trim() }),
+    onSuccess: async () => {
+      const { data: stores } = await api.get('/stores');
+      if (stores?.length > 0) {
+        await setCurrentStoreId(stores[0].store.id);
+      }
+    },
+    onError: (e: any) => {
+      setError(e.response?.data?.message ?? '유효하지 않은 초대 코드입니다.');
+    },
+  });
+
+  return (
+    <KeyboardAvoidingView
+      style={noStoreStyles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <Text style={noStoreStyles.emoji}>🏪</Text>
+      <Text style={noStoreStyles.title}>소속 매장이 없습니다</Text>
+      <Text style={noStoreStyles.desc}>
+        사장님께 초대 코드를 받아{'\n'}아래에 입력해 주세요.
+      </Text>
+
+      <View style={noStoreStyles.inputRow}>
+        <TextInput
+          style={noStoreStyles.input}
+          placeholder="초대 코드 입력"
+          value={code}
+          onChangeText={(t) => { setCode(t); setError(''); }}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <TouchableOpacity
+          style={[noStoreStyles.btn, (!code.trim() || joinMutation.isPending) && noStoreStyles.btnDisabled]}
+          onPress={() => joinMutation.mutate()}
+          disabled={!code.trim() || joinMutation.isPending}
+        >
+          <Text style={noStoreStyles.btnText}>
+            {joinMutation.isPending ? '확인 중...' : '가입'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {error ? <Text style={noStoreStyles.error}>{error}</Text> : null}
+    </KeyboardAvoidingView>
+  );
+}
+
 export default function HomeScreen() {
   const qc = useQueryClient();
   const { user, currentStoreId } = useAuthStore();
+
+  // 소속 매장 없으면 온보딩 화면
+  if (!currentStoreId) return <NoStoreScreen />;
   const today = format(new Date(), 'yyyy.MM.dd EEE', { locale: ko });
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const yearMonth = format(new Date(), 'yyyy-MM');
@@ -95,11 +153,7 @@ export default function HomeScreen() {
       </View>
 
       {/* 출퇴근 버튼 */}
-      {!currentStoreId ? (
-        <View style={[styles.clockButton, styles.clockButtonDisabled]}>
-          <Text style={styles.clockButtonText}>소속 매장 없음</Text>
-        </View>
-      ) : loadingAtt ? (
+      {loadingAtt ? (
         <View style={[styles.clockButton, styles.clockButtonDisabled]}>
           <ActivityIndicator color="#fff" />
         </View>
@@ -160,4 +214,21 @@ const styles = StyleSheet.create({
   },
   payrollLabel: { fontSize: 13, color: '#6b7280', marginBottom: 4 },
   payrollAmount: { fontSize: 22, fontWeight: 'bold', color: '#2563eb' },
+});
+
+const noStoreStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#f9fafb', alignItems: 'center', justifyContent: 'center', padding: 32 },
+  emoji: { fontSize: 56, marginBottom: 16 },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#111827', marginBottom: 8 },
+  desc: { fontSize: 14, color: '#6b7280', textAlign: 'center', lineHeight: 22, marginBottom: 32 },
+  inputRow: { flexDirection: 'row', gap: 8, width: '100%' },
+  input: {
+    flex: 1, backgroundColor: '#fff', borderWidth: 1, borderColor: '#d1d5db',
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12,
+    fontSize: 15, color: '#111827',
+  },
+  btn: { backgroundColor: '#2563eb', borderRadius: 12, paddingHorizontal: 18, justifyContent: 'center' },
+  btnDisabled: { backgroundColor: '#9ca3af' },
+  btnText: { color: '#fff', fontWeight: '700', fontSize: 14 },
+  error: { marginTop: 10, fontSize: 13, color: '#ef4444', textAlign: 'center' },
 });
