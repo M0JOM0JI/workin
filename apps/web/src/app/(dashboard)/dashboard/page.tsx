@@ -23,14 +23,19 @@ export default function DashboardPage() {
     const hasAtt = attendances.some((a: any) => a.staffId === s.staffId);
     return !hasAtt && now > new Date(s.startAt);
   }).length;
+  const late = schedules.filter((s: any) => {
+    const att = attendances.find((a: any) => a.staffId === s.staffId);
+    return att && new Date(att.clockIn) > new Date(s.startAt);
+  }).length;
 
   return (
     <>
       <Header title="대시보드" description={today} />
 
-      <div className="grid grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-5 gap-4 mb-6">
         <StatCard label="오늘 출근" value={`${working}`} total={`${total}명`} color="green" />
         <StatCard label="오늘 스케줄" value={`${total}`} total="건" color="blue" />
+        <StatCard label="지각" value={`${late}`} total="명" color="orange" />
         <StatCard label="결근" value={`${absent}`} total="명" color="red" />
         <StatCard
           label="이번달 예상 급여"
@@ -55,12 +60,14 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {schedules.map((s: any) => {
                 const att = attendances.find((a: any) => a.staffId === s.staffId);
-                const isLate = !att && now > new Date(s.startAt);
+                const isAbsent = !att && now > new Date(s.startAt);
+                const isLateClockIn = att && !att.clockOut && new Date(att.clockIn) > new Date(s.startAt);
                 const status = att
-                  ? (att.clockOut ? '퇴근' : '출근')
-                  : isLate ? '결근' : '예정';
+                  ? (att.clockOut ? '퇴근' : isLateClockIn ? '지각' : '출근')
+                  : isAbsent ? '결근' : '예정';
                 const badgeVariant =
                   status === '출근' ? 'green' :
+                  status === '지각' ? 'orange' :
                   status === '퇴근' ? 'gray' :
                   status === '결근' ? 'red' : 'yellow';
                 return (
@@ -116,12 +123,13 @@ export default function DashboardPage() {
 
 function StatCard({
   label, value, total, color,
-}: { label: string; value: string; total: string; color: 'green' | 'blue' | 'purple' | 'red' }) {
+}: { label: string; value: string; total: string; color: 'green' | 'blue' | 'purple' | 'red' | 'orange' }) {
   const colorMap = {
     green:  'text-green-600',
     blue:   'text-blue-600',
     purple: 'text-purple-600',
     red:    'text-red-500',
+    orange: 'text-orange-500',
   };
   return (
     <Card padding="md">
