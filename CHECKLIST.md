@@ -136,7 +136,7 @@
 | /auth/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, 자동 로그인 |
 | /onboarding/store (첫 매장 생성) | ✅ | ✅ | stores=0 시 강제 진입, 전체 필드 입력 폼 |
 | 사이드바 — 매장 추가 모달 | ✅ | ✅ | OWNER만 노출, 전체 필드 입력, WIREFRAME B-11 |
-| /dashboard | ✅ | ✅ | 실시간 출근현황, 스케줄, 급여 |
+| /dashboard | ✅ | ✅ | 실시간 출근현황, 스케줄, 급여, 결근 감지 |
 | /schedules | ✅ | ✅ | 주간 그리드 (실제 API) |
 | /schedules — 시프트 추가 모달 | ✅ | ✅ | 직원 선택·날짜·KST 시간 입력 → POST |
 | /schedules — 블록 삭제 | ✅ | ✅ | 블록 클릭 → 삭제 확인 모달 → DELETE |
