@@ -16,16 +16,22 @@ export default function DashboardPage() {
   const { data: schedules = [], isLoading: loadingSched } = useTodaySchedules(currentStoreId);
   const { data: payroll } = useMonthPayrollSummary(currentStoreId);
 
+  const now     = new Date();
   const working = attendances.filter((a: any) => !a.clockOut).length;
   const total   = schedules.length;
+  const absent  = schedules.filter((s: any) => {
+    const hasAtt = attendances.some((a: any) => a.staffId === s.staffId);
+    return !hasAtt && now > new Date(s.startAt);
+  }).length;
 
   return (
     <>
       <Header title="대시보드" description={today} />
 
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-4 gap-4 mb-6">
         <StatCard label="오늘 출근" value={`${working}`} total={`${total}명`} color="green" />
         <StatCard label="오늘 스케줄" value={`${total}`} total="건" color="blue" />
+        <StatCard label="결근" value={`${absent}`} total="명" color="red" />
         <StatCard
           label="이번달 예상 급여"
           value={payroll ? `₩${payroll.totalNetPay.toLocaleString()}` : '---'}
@@ -49,7 +55,14 @@ export default function DashboardPage() {
             <div className="space-y-3">
               {schedules.map((s: any) => {
                 const att = attendances.find((a: any) => a.staffId === s.staffId);
-                const status = att ? (att.clockOut ? '퇴근' : '출근') : '예정';
+                const isLate = !att && now > new Date(s.startAt);
+                const status = att
+                  ? (att.clockOut ? '퇴근' : '출근')
+                  : isLate ? '결근' : '예정';
+                const badgeVariant =
+                  status === '출근' ? 'green' :
+                  status === '퇴근' ? 'gray' :
+                  status === '결근' ? 'red' : 'yellow';
                 return (
                   <div key={s.id} className="flex items-center justify-between py-1">
                     <div>
@@ -58,7 +71,7 @@ export default function DashboardPage() {
                         {formatTime(s.startAt)} ~ {formatTime(s.endAt)}
                       </p>
                     </div>
-                    <Badge variant={status === '출근' ? 'green' : status === '퇴근' ? 'gray' : 'yellow'} dot>
+                    <Badge variant={badgeVariant} dot>
                       {status}
                     </Badge>
                   </div>
@@ -103,11 +116,12 @@ export default function DashboardPage() {
 
 function StatCard({
   label, value, total, color,
-}: { label: string; value: string; total: string; color: 'green' | 'blue' | 'purple' }) {
+}: { label: string; value: string; total: string; color: 'green' | 'blue' | 'purple' | 'red' }) {
   const colorMap = {
     green:  'text-green-600',
     blue:   'text-blue-600',
     purple: 'text-purple-600',
+    red:    'text-red-500',
   };
   return (
     <Card padding="md">
