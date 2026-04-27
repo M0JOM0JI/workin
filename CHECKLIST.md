@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-27 (STEP 5 완료 — 급여 고도화: 주휴·야간·초과수당 + 4대보험 공제 + 급여 확정 API·웹 UI)
+> 마지막 갱신: 2026-04-27 (STEP 6 완료 — /settings 자동퇴근 설정 섹션 + 수당 설정 + 급여일 + 매니저 읽기 전용)
 
 ---
 
@@ -232,8 +232,8 @@
 | /payroll — 급여 확정 버튼 | ✅ | ✅ | 직원 상세 모달 내 확정 버튼 + 확정일 배지 |
 | /payroll — 주휴수당 표시 | ✅ | ✅ | breakdown에 주휴·야간·초과수당 항목 상세 표시 |
 | /settings | ✅ | ✅ | 매장 수정/삭제, 확장 필드(사업자명·번호·전화) 포함 |
-| /settings — 자동 퇴근 설정 섹션 | ⬜ | ⬜ | 활성화 토글, 모드 선택(스케줄/최대시간/자정), 기준값 입력 |
-| /settings — 매니저 읽기 전용 처리 | ⬜ | ⬜ | MANAGER 로그인 시 설정 페이지 편집 불가 UI |
+| /settings — 자동 퇴근 설정 섹션 | ✅ | ✅ | 활성화 토글, 모드 선택(MIDNIGHT/MAX_HOURS/SCHEDULE), 기준값 입력 |
+| /settings — 매니저 읽기 전용 처리 | ✅ | ✅ | MANAGER 로그인 시 노란 안내 배너 + 전체 입력 disabled |
 
 ---
 
@@ -296,7 +296,7 @@
 | Store 자동퇴근 설정 필드 마이그레이션 | ⬜ | autoClockOut, autoClockOutMode, autoClockOutBuffer, autoClockOutMaxHours |
 | Attendance.isAutoClockOut 필드 마이그레이션 | ⬜ | |
 | @nestjs/schedule Cron Job 구현 | ⬜ | 5분 주기, 매장별 설정 기준 처리 |
-| 웹 /settings — 자동퇴근 설정 섹션 | ⬜ | 모드 선택·기준값 UI |
+| 웹 /settings — 자동퇴근 설정 섹션 | ✅ | 모드 선택·기준값 UI, PATCH /stores/:id 연동 |
 | 웹/모바일 — 자동퇴근 배지 표시 | ⬜ | |
 
 ### 5-3. 스케줄 역할별 조회/등록 🔴
@@ -347,7 +347,7 @@
 |------|------|------|
 | 웹 /staffs — 직원 이름 검색 | ⬜ | |
 | 웹 헤더 — 매니저 역할 배지 | ⬜ | MANAGER 로그인 시 표시 |
-| 웹 /settings — MANAGER 읽기 전용 | ⬜ | |
+| 웹 /settings — MANAGER 읽기 전용 | ✅ | 안내 배너 + 전체 입력 disabled |
 | 다중 매장 전환 데이터 리로드 검증 | ⬜ | ⚠️ 항목 해소 |
 
 ### 5-10. 실무 밀착 기능 (v1.2) 🟡
