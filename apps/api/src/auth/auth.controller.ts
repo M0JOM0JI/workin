@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Patch, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { SignupDto } from './dto/signup.dto';
@@ -37,5 +37,16 @@ export class AuthController {
   @ApiOperation({ summary: '내 정보 조회' })
   getMe(@CurrentUser('id') userId: string) {
     return this.authService.getMe(userId);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: '내 정보 수정 (이름·전화번호)' })
+  updateMe(
+    @CurrentUser('id') userId: string,
+    @Body() dto: { name?: string; phone?: string | null },
+  ) {
+    return this.authService.updateMe(userId, dto);
   }
 }

@@ -48,6 +48,17 @@ export class AuthService {
     });
   }
 
+  async updateMe(userId: string, dto: { name?: string; phone?: string | null }) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        ...(dto.name  !== undefined && { name: dto.name }),
+        ...(dto.phone !== undefined && { phone: dto.phone }),
+      },
+      select: { id: true, email: true, name: true, phone: true },
+    });
+  }
+
   private generateTokens(user: { id: string; email: string; name: string; phone?: string | null }) {
     const payload = { sub: user.id, email: user.email };
     const accessToken = this.jwt.sign(payload);

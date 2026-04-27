@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-27 (STEP 6 완료 — /settings 자동퇴근 설정 섹션 + 수당 설정 + 급여일 + 매니저 읽기 전용)
+> 마지막 갱신: 2026-04-27 (STEP 7 완료 — PATCH /auth/me API + 모바일 급여 breakdown + 프로필 탭)
 
 ---
 
@@ -51,7 +51,7 @@
 | POST /auth/refresh | ✅ | Refresh 토큰 갱신 |
 | GET /auth/me | ✅ | 내 정보 조회 |
 | JWT Strategy (passport-jwt) | ✅ | |
-| PATCH /auth/me (프로필 수정) | ⬜ | 이름·전화번호 변경 |
+| PATCH /auth/me (프로필 수정) | ✅ | 이름·전화번호 변경 |
 
 ### 2-3. Stores 모듈
 | 항목 | 상태 | 비고 |
@@ -264,8 +264,8 @@
 | (tabs)/schedule — 역할별 분기 | ⬜ | ⬜ | OWNER/MANAGER: 전체 직원 스케줄 조회·등록, STAFF: 본인만 |
 | (tabs)/schedule — 주간 총 근무시간 | ⬜ | ⬜ | 하단에 이번주 합계 표시 (S-11 와이어프레임) |
 | (tabs)/payroll | ✅ | ✅ | 월별 급여, 월 변경 네비게이션 추가 |
-| (tabs)/payroll — 3.3% 공제 breakdown | ⬜ | ⬜ | 기본급·공제·실지급 항목 상세 표시 (S-13 와이어프레임) |
-| (tabs)/profile (프로필/설정 탭) | ⬜ | ⬜ | 이름·전화번호 수정, 로그아웃 (S-14 와이어프레임) |
+| (tabs)/payroll — 3.3% 공제 breakdown | ✅ | ✅ | 기본급·주휴·야간·초과수당·공제·실지급 전체 breakdown + 확정 배지 |
+| (tabs)/profile (프로필/설정 탭) | ✅ | ✅ | 이름·전화번호 수정 (PATCH /auth/me), 로그아웃 |
 
 ### 4-3. 실기동 검증
 | 항목 | 상태 | 비고 |
@@ -317,8 +317,8 @@
 ### 5-5. 프로필 수정 🟡
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| API — PATCH /auth/me | ⬜ | 이름·전화번호 수정 |
-| 모바일 — (tabs)/profile 탭 | ⬜ | 이름·전화번호 수정 + 로그아웃 |
+| API — PATCH /auth/me | ✅ | 이름·전화번호 수정 |
+| 모바일 — (tabs)/profile 탭 | ✅ | 이름·전화번호 수정 + 로그아웃 |
 
 ### 5-6. 스케줄 편의 기능 🟡
 | 항목 | 상태 | 비고 |
