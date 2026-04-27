@@ -2,6 +2,7 @@ import {
   Injectable,
   ForbiddenException,
   BadRequestException,
+  NotFoundException,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { PrismaService } from '../common/prisma/prisma.service';
@@ -69,7 +70,43 @@ export class StoresService {
       data: {
         ...(dto.hourlyWage !== undefined && { hourlyWage: dto.hourlyWage }),
         ...(dto.leftAt !== undefined && { leftAt: dto.leftAt ? new Date(dto.leftAt) : null }),
+        ...(dto.contractHoursPerMonth !== undefined && { contractHoursPerMonth: dto.contractHoursPerMonth }),
+        ...(dto.insuranceType !== undefined && { insuranceType: dto.insuranceType }),
+        ...(dto.memo !== undefined && { memo: dto.memo }),
       },
+      include: { user: { select: { id: true, name: true, email: true, phone: true } } },
+    });
+  }
+
+  async updateStaffRole(storeId: string, userId: string, staffId: string, role: Role) {
+    await this.assertRole(storeId, userId, [Role.OWNER]);
+
+    const target = await this.prisma.storeStaff.findFirst({
+      where: { id: staffId, storeId, leftAt: null },
+    });
+    if (!target) throw new NotFoundException('해당 직원을 찾을 수 없습니다.');
+    if (target.role === Role.OWNER) throw new ForbiddenException('오너 역할은 변경할 수 없습니다.');
+    if (role === Role.OWNER) throw new ForbiddenException('오너 역할로 변경할 수 없습니다.');
+
+    return this.prisma.storeStaff.update({
+      where: { id: staffId },
+      data: { role },
+      include: { user: { select: { id: true, name: true, email: true, phone: true } } },
+    });
+  }
+
+  async rehireStaff(storeId: string, userId: string, staffId: string) {
+    await this.assertRole(storeId, userId, [Role.OWNER, Role.MANAGER]);
+
+    const target = await this.prisma.storeStaff.findFirst({
+      where: { id: staffId, storeId },
+    });
+    if (!target) throw new NotFoundException('해당 직원을 찾을 수 없습니다.');
+    if (!target.leftAt) throw new BadRequestException('퇴직 처리된 직원이 아닙니다.');
+
+    return this.prisma.storeStaff.update({
+      where: { id: staffId },
+      data: { leftAt: null, joinedAt: new Date() },
       include: { user: { select: { id: true, name: true, email: true, phone: true } } },
     });
   }
