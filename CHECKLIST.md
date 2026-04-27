@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-27 (STEP 2 완료 — 역할 관리 API + 계약/보험/메모 필드 + 재고용 + 웹 UI 업데이트)
+> 마지막 갱신: 2026-04-27 (STEP 3 완료 — AttendanceRequest API + 자동퇴근 Cron + 웹·모바일 수정 요청 UI)
 
 ---
 
@@ -109,24 +109,24 @@
 | GET /stores/:id/attendance | ✅ | date 쿼리 파라미터 지원 |
 | GET /me/attendance | ✅ | |
 | PATCH /stores/:id/attendance/:id (수동 수정) | ✅ | 오너/매니저가 clockIn·clockOut 직접 수정 |
-| Attendance.isAutoClockOut 필드 추가 (마이그레이션) | ⬜ | 자동 퇴근 여부 플래그 |
+| Attendance.isAutoClockOut 필드 추가 (마이그레이션) | ✅ | STEP 1 마이그레이션에서 완료 |
 | Attendance.scheduleId 연결 활성화 | ⬜ | clock-in 시 해당 날짜 스케줄 자동 매칭 |
 
 ### 2-5-1. AttendanceRequest 모듈 (출퇴근 수정 요청)
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| AttendanceRequest DB 모델 추가 (마이그레이션) | ⬜ | storeId, staffId, requestedBy, attendanceId(nullable), requestedClockIn, requestedClockOut, reason, status(PENDING/APPROVED/REJECTED), reviewedBy, reviewedAt, reviewNote |
-| POST /stores/:id/attendance-requests | ⬜ | 전 역할 가능. STAFF→PENDING, OWNER/MANAGER→즉시 APPROVED + 출퇴근 반영 |
-| GET /stores/:id/attendance-requests | ⬜ | 오너/매니저 전체 목록 조회, status 필터 |
-| GET /me/attendance-requests | ⬜ | 알바생 본인 요청 목록 |
-| PATCH /stores/:id/attendance-requests/:rid/review | ⬜ | 오너/매니저 승인/거절, 승인 시 출퇴근 기록 반영 |
+| AttendanceRequest DB 모델 추가 (마이그레이션) | ✅ | STEP 1 마이그레이션에서 완료 |
+| POST /stores/:id/attendance-requests | ✅ | STAFF→PENDING, OWNER/MANAGER→즉시 APPROVED + 출퇴근 반영 |
+| GET /stores/:id/attendance-requests | ✅ | status 필터 지원 |
+| GET /me/attendance-requests | ✅ | 알바생 본인 요청 목록 |
+| PATCH /stores/:id/attendance-requests/:rid/review | ✅ | 승인 시 출퇴근 기록 즉시 반영 |
 
 ### 2-5-2. 자동 퇴근 처리 모듈
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| Store 자동퇴근 설정 필드 추가 (마이그레이션) | ⬜ | autoClockOut(bool), autoClockOutMode(SCHEDULE/MAX_HOURS/MIDNIGHT), autoClockOutBuffer(분), autoClockOutMaxHours(시간) |
-| @nestjs/schedule Cron Job 구현 | ⬜ | 5분마다 실행, 매장별 설정 기준으로 미퇴근 자동 처리 |
-| PATCH /stores/:id (자동퇴근 설정 포함) | ⬜ | 기존 매장 수정 API에 설정 필드 추가 |
+| Store 자동퇴근 설정 필드 추가 (마이그레이션) | ✅ | STEP 1 마이그레이션에서 완료 |
+| @nestjs/schedule Cron Job 구현 | ✅ | 5분마다 실행, SCHEDULE/MAX_HOURS/MIDNIGHT 3가지 모드 |
+| PATCH /stores/:id (자동퇴근 설정 포함) | ✅ | UpdateStoreDto에 autoClockOut* 필드 추가 |
 
 ### 2-6. Payroll 모듈
 | 항목 | 상태 | 비고 |
@@ -224,8 +224,8 @@
 | /staffs — 퇴직자 재고용 | ✅ | ✅ | 퇴직 직원 상세 모달에서 재고용 버튼 |
 | /attendance | ✅ | ✅ | 30초 자동 갱신 |
 | /attendance — 수동 수정 | ✅ | ✅ | 오너/매니저가 출퇴근 시간 직접 수정 |
-| /attendance — 수정 요청 탭 | ⬜ | ⬜ | PENDING 요청 목록, 승인/거절 버튼, 처리 이력 |
-| /attendance — 자동퇴근 배지 표시 | ⬜ | ⬜ | isAutoClockOut 레코드에 회색 '자동퇴근' 배지 |
+| /attendance — 수정 요청 탭 | ✅ | ✅ | PENDING 요청 목록, 승인/거절 처리 모달, 수동 등록 버튼 |
+| /attendance — 자동퇴근 배지 표시 | ✅ | ✅ | isAutoClockOut 레코드에 '자동퇴근' 배지 표시 |
 | /attendance — 지각 배지 표시 | ⬜ | ⬜ | 스케줄 대비 지각 시 주황 배지 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
 | /payroll — 직원별 상세 | ✅ | ✅ | 행 클릭 → 급여 요약 + 출퇴근 내역 모달 |
@@ -257,9 +257,9 @@
 | (auth)/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, KeyboardAvoidingView |
 | (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신, KST 시간 표시, stores=0 초대코드 입력 온보딩 |
 | (tabs)/attendance | ✅ | ✅ | 월별 출퇴근, 월 변경 네비게이션 추가 |
-| (tabs)/attendance — 수정 요청 | ⬜ | ⬜ | 레코드 탭 → 수정 요청 폼 (사유+시간), 요청 상태 배지 표시 |
-| (tabs)/attendance — 누락 출퇴근 신청 (+버튼) | ⬜ | ⬜ | 새 출퇴근 기록 수동 등록 요청 |
-| (tabs)/attendance — 자동퇴근 배지 | ⬜ | ⬜ | isAutoClockOut 레코드 구분 표시 |
+| (tabs)/attendance — 수정 요청 | ✅ | ✅ | 레코드별 '수정 요청' 버튼, 요청 상태 배지 표시 |
+| (tabs)/attendance — 누락 출퇴근 신청 (+버튼) | ✅ | ✅ | 헤더 '누락 신청' 버튼 → 바텀시트 폼 |
+| (tabs)/attendance — 자동퇴근 배지 | ✅ | ✅ | isAutoClockOut 레코드 '자동퇴근' 배지 표시 |
 | (tabs)/schedule | ✅ | ✅ | 주간 스케줄, storeId TODO 해소 |
 | (tabs)/schedule — 역할별 분기 | ⬜ | ⬜ | OWNER/MANAGER: 전체 직원 스케줄 조회·등록, STAFF: 본인만 |
 | (tabs)/schedule — 주간 총 근무시간 | ⬜ | ⬜ | 하단에 이번주 합계 표시 (S-11 와이어프레임) |
