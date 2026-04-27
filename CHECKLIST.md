@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-27 (STEP 4 완료 — 스케줄 확정·주간복사 API + 웹 블록 상세/수정/확정 UI)
+> 마지막 갱신: 2026-04-27 (STEP 5 완료 — 급여 고도화: 주휴·야간·초과수당 + 4대보험 공제 + 급여 확정 API·웹 UI)
 
 ---
 
@@ -134,12 +134,12 @@
 | GET /stores/:id/payroll | ✅ | year/month 또는 yearMonth 파라미터 지원, summary 형태 반환 |
 | GET /stores/:id/payroll/:staffId | ✅ | |
 | GET /me/payroll | ✅ | |
-| POST /stores/:id/payroll/:staffId/confirm | ⬜ | 오너/매니저 급여 확정 처리 (isConfirmed = true) |
-| GET /stores/:id/payroll — 주휴수당 자동 계산 반영 | ⬜ | 주 15시간 이상 근무 시 자동 포함 |
-| GET /stores/:id/payroll — 야간수당 계산 반영 | ⬜ | 매장 설정 기반 22:00~06:00 구간 배율 적용 |
-| GET /stores/:id/payroll — 초과근무 수당 계산 | ⬜ | 스케줄 초과 시간 별도 집계 + 배율 적용 |
-| GET /stores/:id/payroll — 4대보험 공제 분기 | ⬜ | insuranceType별 공제 계산 분기 |
-| Payroll 모델 필드 확장 마이그레이션 | ⬜ | nightMinutes, overtimeMinutes, nightAllowance, overtimePay 컬럼 추가 |
+| POST /stores/:id/payroll/:staffId/confirm | ✅ | 오너/매니저 급여 확정 처리 (isConfirmed = true, upsert) |
+| GET /stores/:id/payroll — 주휴수당 자동 계산 반영 | ✅ | 주 15시간 이상 근무 시 자동 포함 |
+| GET /stores/:id/payroll — 야간수당 계산 반영 | ✅ | 매장 설정 기반 KST 22:00~06:00 구간 배율 적용 |
+| GET /stores/:id/payroll — 초과근무 수당 계산 | ✅ | 스케줄 초과 시간 별도 집계 + 배율 적용 |
+| GET /stores/:id/payroll — 4대보험 공제 분기 | ✅ | insuranceType별 공제 계산 분기 (NONE/THREE_THREE/FOUR_MAJOR) |
+| Payroll 모델 필드 확장 마이그레이션 | ✅ | STEP 1 마이그레이션에서 완료 |
 
 ### 2-7. Statistics 모듈 (통계)
 | 항목 | 상태 | 비고 |
@@ -229,8 +229,8 @@
 | /attendance — 지각 배지 표시 | ⬜ | ⬜ | 스케줄 대비 지각 시 주황 배지 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
 | /payroll — 직원별 상세 | ✅ | ✅ | 행 클릭 → 급여 요약 + 출퇴근 내역 모달 |
-| /payroll — 급여 확정 버튼 | ⬜ | ⬜ | 오너/매니저가 월 급여 확정 처리 |
-| /payroll — 주휴수당 표시 | ⬜ | ⬜ | 조건 충족 시 breakdown에 주휴수당 항목 표시 |
+| /payroll — 급여 확정 버튼 | ✅ | ✅ | 직원 상세 모달 내 확정 버튼 + 확정일 배지 |
+| /payroll — 주휴수당 표시 | ✅ | ✅ | breakdown에 주휴·야간·초과수당 항목 상세 표시 |
 | /settings | ✅ | ✅ | 매장 수정/삭제, 확장 필드(사업자명·번호·전화) 포함 |
 | /settings — 자동 퇴근 설정 섹션 | ⬜ | ⬜ | 활성화 토글, 모드 선택(스케줄/최대시간/자정), 기준값 입력 |
 | /settings — 매니저 읽기 전용 처리 | ⬜ | ⬜ | MANAGER 로그인 시 설정 페이지 편집 불가 UI |
@@ -331,10 +331,10 @@
 ### 5-7. 급여 확정 + 상세 🟡
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| API — POST /stores/:id/payroll/:staffId/confirm | ⬜ | isConfirmed 처리 |
-| 웹 /payroll — 확정 버튼 + 확정 상태 배지 | ⬜ | |
+| API — POST /stores/:id/payroll/:staffId/confirm | ✅ | isConfirmed 처리, upsert |
+| 웹 /payroll — 확정 버튼 + 확정 상태 배지 | ✅ | 미확정(노랑)/확정(초록) 배지, 확정일 표시 |
 | 모바일 급여 — 3.3% 공제 breakdown | ⬜ | |
-| 주휴수당 자동 계산 (주 15h 이상) | ⬜ | API calcWeeklyAllowance 활용 |
+| 주휴수당 자동 계산 (주 15h 이상) | ✅ | API calcWeeklyAllowance 활용, 웹 breakdown 표시 |
 
 ### 5-8. 지각 감지 🟡
 | 항목 | 상태 | 비고 |
@@ -353,14 +353,14 @@
 ### 5-10. 실무 밀착 기능 (v1.2) 🟡
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| 야간수당 계산 (API + 웹/모바일 표시) | ⬜ | 22:00~06:00, 매장 설정 기반 배율 |
-| 초과근무 수당 계산 (API + 웹/모바일 표시) | ⬜ | 스케줄 종료 후 초과 시간 집계 |
+| 야간수당 계산 (API + 웹/모바일 표시) | ✅ | API: KST 22:00~06:00 overlap 계산. 웹 breakdown 표시. 모바일 미완 |
+| 초과근무 수당 계산 (API + 웹/모바일 표시) | ✅ | API: 스케줄 초과 시간 집계. 웹 breakdown 표시. 모바일 미완 |
 | 최저시급 경고 (웹 시급 입력 시) | ⬜ | 법정 최저시급 상수 관리 |
 | 급여일 설정 + D-N 표시 | ⬜ | 웹 /settings + 웹/모바일 급여 화면 |
-| 4대보험 여부 관리 + 공제 분기 | ⬜ | 직원 상세 모달 + 급여 계산 분기 |
-| 직원 내부 메모 | ⬜ | 웹 직원 상세 모달 |
-| 계약 근무시간 관리 + 초과/미달 현황 | ⬜ | 웹 직원 상세 + 급여 화면 |
-| 퇴직자 재고용 | ⬜ | 웹 직원 목록 (퇴직 탭) |
+| 4대보험 여부 관리 + 공제 분기 | ✅ | StoreStaff.insuranceType 기반, 급여 계산 분기 완료 |
+| 직원 내부 메모 | ✅ | 웹 직원 상세 모달 (STEP 2에서 완료) |
+| 계약 근무시간 관리 + 초과/미달 현황 | ✅ | contractHoursPerMonth 수정 UI 완료 (STEP 2), 현황 표시는 미완 |
+| 퇴직자 재고용 | ✅ | 웹 직원 목록 (퇴직 탭, STEP 2에서 완료) |
 | 스케줄 확정 알림 | ⬜ | 확정 처리 시 인앱 알림 자동 생성 |
 | 직원별 근무 통계 페이지 (웹) | ⬜ | 지각·결근·평균 근무시간 |
 | 초과근무 감지 배지 (웹 출근 현황) | ⬜ | 스케줄 종료 후 N시간 이상 근무 중 |
