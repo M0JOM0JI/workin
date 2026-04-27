@@ -15,6 +15,7 @@ const navItems = [
   { href: '/staffs',      label: '알바생',     icon: '👥' },
   { href: '/attendance',  label: '출근 현황',  icon: '✅' },
   { href: '/payroll',     label: '급여 관리',  icon: '💰' },
+  { href: '/statistics',  label: '근무 통계',  icon: '📊' },
 ];
 
 export function Sidebar() {

@@ -9,6 +9,7 @@ import { SchedulesModule } from './schedules/schedules.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { PayrollModule } from './payroll/payroll.module';
 import { AutoClockoutModule } from './auto-clockout/auto-clockout.module';
+import { StatisticsModule } from './statistics/statistics.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AutoClockoutModule } from './auto-clockout/auto-clockout.module';
     AttendanceModule,
     PayrollModule,
     AutoClockoutModule,
+    StatisticsModule,
   ],
 })
 export class AppModule {}
