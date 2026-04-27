@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-23 (출퇴근 수동 수정 구현)
+> 마지막 갱신: 2026-04-27 (STEP 2 완료 — 역할 관리 API + 계약/보험/메모 필드 + 재고용 + 웹 UI 업데이트)
 
 ---
 
@@ -68,6 +68,11 @@
 | POST /stores/join | ✅ | 코드 검증 → 멤버 등록 → 코드 삭제 |
 | assertRole / assertMember 헬퍼 | ✅ | |
 | PATCH /stores/:id/staffs/:staffId (시급·퇴직 처리) | ✅ | hourlyWage 수정, leftAt 업데이트 |
+| POST /stores/:id/invite — 역할 분리 | ✅ | role 파라미터 추가 (STAFF/MANAGER), OWNER만 MANAGER 코드 발급 가능 |
+| PATCH /stores/:id/staffs/:staffId/role | ✅ | OWNER 전용 — STAFF↔MANAGER 승격/강등 |
+| POST /stores/:id/staffs/:staffId/rehire | ✅ | 퇴직자 재고용 (leftAt → null) |
+| PATCH /stores/:id/staffs/:staffId (메모·4대보험·계약시간) | ✅ | StoreStaff.memo, insuranceType, contractHoursPerMonth 수정 |
+| Store 설정 필드 확장 마이그레이션 | ⬜ | payDay, nightShiftEnabled/Multiplier, overtimeEnabled/Multiplier 컬럼 추가 |
 
 ### 2-4. Schedules 모듈
 | 항목 | 상태 | 비고 |
@@ -76,6 +81,25 @@
 | POST /stores/:id/schedules | ✅ | |
 | PATCH /stores/:id/schedules/:sid | ✅ | |
 | DELETE /stores/:id/schedules/:sid | ✅ | |
+| POST /stores/:id/schedules/copy-week | ⬜ | 특정 주 시프트 전체를 다음 주로 복사 |
+| PATCH /stores/:id/schedules/:sid/confirm | ⬜ | 스케줄 확정 처리 + 해당 알바생 알림 생성 |
+| POST /stores/:id/schedules (반복 등록) | ⬜ | isRecurring, repeatRule 필드 활용, 매주 자동 생성 |
+
+### 2-4-1. ScheduleRequest 모듈 (스케줄 변경 요청)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| ScheduleRequest DB 모델 추가 (마이그레이션) | ⬜ | storeId, staffId, scheduleId, requestType(CHANGE/CANCEL/SUBSTITUTE), requestedStartAt, requestedEndAt, reason, status, reviewedBy 등 |
+| POST /stores/:id/schedule-requests | ⬜ | STAFF가 스케줄 변경/취소/대타 요청 제출 |
+| GET /stores/:id/schedule-requests | ⬜ | 오너/매니저 전체 목록 |
+| GET /me/schedule-requests | ⬜ | 알바생 본인 요청 목록 |
+| PATCH /stores/:id/schedule-requests/:rid/review | ⬜ | 오너/매니저 승인/거절 |
+
+### 2-4-2. WorkPreference 모듈 (근무 희망 시간)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| WorkPreference DB 모델 추가 (마이그레이션) | ⬜ | storeId, staffId, dayOfWeek(0~6), startTime, endTime |
+| PUT /me/work-preferences | ⬜ | 알바생 본인 희망 시간 등록/수정 (upsert) |
+| GET /stores/:id/work-preferences | ⬜ | 오너/매니저 — 전 직원 희망 시간 조회 (스케줄 작성 참고용) |
 
 ### 2-5. Attendance 모듈
 | 항목 | 상태 | 비고 |
@@ -85,6 +109,24 @@
 | GET /stores/:id/attendance | ✅ | date 쿼리 파라미터 지원 |
 | GET /me/attendance | ✅ | |
 | PATCH /stores/:id/attendance/:id (수동 수정) | ✅ | 오너/매니저가 clockIn·clockOut 직접 수정 |
+| Attendance.isAutoClockOut 필드 추가 (마이그레이션) | ⬜ | 자동 퇴근 여부 플래그 |
+| Attendance.scheduleId 연결 활성화 | ⬜ | clock-in 시 해당 날짜 스케줄 자동 매칭 |
+
+### 2-5-1. AttendanceRequest 모듈 (출퇴근 수정 요청)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| AttendanceRequest DB 모델 추가 (마이그레이션) | ⬜ | storeId, staffId, requestedBy, attendanceId(nullable), requestedClockIn, requestedClockOut, reason, status(PENDING/APPROVED/REJECTED), reviewedBy, reviewedAt, reviewNote |
+| POST /stores/:id/attendance-requests | ⬜ | 전 역할 가능. STAFF→PENDING, OWNER/MANAGER→즉시 APPROVED + 출퇴근 반영 |
+| GET /stores/:id/attendance-requests | ⬜ | 오너/매니저 전체 목록 조회, status 필터 |
+| GET /me/attendance-requests | ⬜ | 알바생 본인 요청 목록 |
+| PATCH /stores/:id/attendance-requests/:rid/review | ⬜ | 오너/매니저 승인/거절, 승인 시 출퇴근 기록 반영 |
+
+### 2-5-2. 자동 퇴근 처리 모듈
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Store 자동퇴근 설정 필드 추가 (마이그레이션) | ⬜ | autoClockOut(bool), autoClockOutMode(SCHEDULE/MAX_HOURS/MIDNIGHT), autoClockOutBuffer(분), autoClockOutMaxHours(시간) |
+| @nestjs/schedule Cron Job 구현 | ⬜ | 5분마다 실행, 매장별 설정 기준으로 미퇴근 자동 처리 |
+| PATCH /stores/:id (자동퇴근 설정 포함) | ⬜ | 기존 매장 수정 API에 설정 필드 추가 |
 
 ### 2-6. Payroll 모듈
 | 항목 | 상태 | 비고 |
@@ -92,6 +134,35 @@
 | GET /stores/:id/payroll | ✅ | year/month 또는 yearMonth 파라미터 지원, summary 형태 반환 |
 | GET /stores/:id/payroll/:staffId | ✅ | |
 | GET /me/payroll | ✅ | |
+| POST /stores/:id/payroll/:staffId/confirm | ⬜ | 오너/매니저 급여 확정 처리 (isConfirmed = true) |
+| GET /stores/:id/payroll — 주휴수당 자동 계산 반영 | ⬜ | 주 15시간 이상 근무 시 자동 포함 |
+| GET /stores/:id/payroll — 야간수당 계산 반영 | ⬜ | 매장 설정 기반 22:00~06:00 구간 배율 적용 |
+| GET /stores/:id/payroll — 초과근무 수당 계산 | ⬜ | 스케줄 초과 시간 별도 집계 + 배율 적용 |
+| GET /stores/:id/payroll — 4대보험 공제 분기 | ⬜ | insuranceType별 공제 계산 분기 |
+| Payroll 모델 필드 확장 마이그레이션 | ⬜ | nightMinutes, overtimeMinutes, nightAllowance, overtimePay 컬럼 추가 |
+
+### 2-7. Statistics 모듈 (통계)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| GET /stores/:id/statistics/staffs | ⬜ | 직원별 월간 지각 횟수·결근 횟수·평균 근무시간 집계 |
+| GET /stores/statistics/summary | ⬜ | 오너 전용 — 전 매장 출근 현황·급여 총액 통합 조회 |
+
+### 2-8. Notification 모듈 (인앱 알림)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Notification DB 모델 추가 (마이그레이션) | ⬜ | userId, storeId, type, title, body, referenceId, isRead |
+| GET /me/notifications | ⬜ | 내 알림 목록 (읽음/안읽음 필터) |
+| PATCH /me/notifications/:id/read | ⬜ | 알림 읽음 처리 |
+| 알림 생성 트리거 연동 | ⬜ | 출퇴근 수정 요청 승인, 급여 확정, 스케줄 확정 시 자동 생성 |
+
+### 2-9. Announcement 모듈 (공지사항)
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Announcement DB 모델 추가 (마이그레이션) | ⬜ | storeId, authorId, title, content, isPinned |
+| POST /stores/:id/announcements | ⬜ | 오너/매니저 공지 등록 |
+| GET /stores/:id/announcements | ⬜ | 전 역할 공지 목록 조회 |
+| PATCH /stores/:id/announcements/:aid | ⬜ | 수정 (작성자 또는 오너/매니저) |
+| DELETE /stores/:id/announcements/:aid | ⬜ | 삭제 |
 
 ---
 
@@ -128,6 +199,7 @@
 | ScheduleBlock / StaffCard / AttendanceBadge / PayrollRow | ✅ | |
 | Modal (공용) | ✅ | ESC 닫기, 백드롭 클릭 닫기, size prop |
 | StoreForm (매장 생성·수정 공용 폼 컴포넌트) | ⬜ | 매장명·사업자명·사업자번호·주소·전화·업종 입력 |
+| 지각 배지 (AttendanceBadge 확장) | ⬜ | 스케줄 시작 대비 clock-in 지연 시 주황 배지 |
 
 ### 3-4. 페이지
 | 페이지 | UI | API 연동 | 비고 |
@@ -140,14 +212,28 @@
 | /schedules | ✅ | ✅ | 주간 그리드 (실제 API) |
 | /schedules — 시프트 추가 모달 | ✅ | ✅ | 직원 선택·날짜·KST 시간 입력 → POST |
 | /schedules — 블록 삭제 | ✅ | ✅ | 블록 클릭 → 삭제 확인 모달 → DELETE |
+| /schedules — 블록 수정 | ⬜ | ⬜ | 블록 클릭 시 삭제 외 시간 수정 모달 추가 |
+| /schedules — 주간 복사 버튼 | ⬜ | ⬜ | 이번 주 시프트 전체 → 다음 주 복사 |
+| /schedules — 월간 캘린더 뷰 탭 | ⬜ | ⬜ | 날짜별 근무자 수 도트 표시 (B-03 와이어프레임) |
 | /staffs | ✅ | ✅ | 재직/퇴직 필터 |
+| /staffs — 직원 검색 | ⬜ | ⬜ | 이름 검색 입력창 (B-04 와이어프레임) |
 | /staffs — 초대 코드 발급 UI | ✅ | ✅ | 코드 발급 모달, 클립보드 복사, 새 코드 발급 |
-| /staffs — 직원 상세·시급 수정 | ✅ | ✅ | 카드 클릭 → 상세 모달, 시급 수정, 퇴직 처리 |
+| /staffs — 초대 역할 선택 (STAFF/MANAGER) | ✅ | ✅ | OWNER만 MANAGER 코드 발급 가능 |
+| /staffs — 직원 상세·시급·계약정보·메모 수정 | ✅ | ✅ | 카드 클릭 → 상세 모달, 시급·계약시간·보험유형·메모 수정 |
+| /staffs — 매니저 승격/강등 | ✅ | ✅ | OWNER 전용, 상세 모달 내 버튼 |
+| /staffs — 퇴직자 재고용 | ✅ | ✅ | 퇴직 직원 상세 모달에서 재고용 버튼 |
 | /attendance | ✅ | ✅ | 30초 자동 갱신 |
 | /attendance — 수동 수정 | ✅ | ✅ | 오너/매니저가 출퇴근 시간 직접 수정 |
+| /attendance — 수정 요청 탭 | ⬜ | ⬜ | PENDING 요청 목록, 승인/거절 버튼, 처리 이력 |
+| /attendance — 자동퇴근 배지 표시 | ⬜ | ⬜ | isAutoClockOut 레코드에 회색 '자동퇴근' 배지 |
+| /attendance — 지각 배지 표시 | ⬜ | ⬜ | 스케줄 대비 지각 시 주황 배지 |
 | /payroll | ✅ | ✅ | 월 선택, summary 형태 |
 | /payroll — 직원별 상세 | ✅ | ✅ | 행 클릭 → 급여 요약 + 출퇴근 내역 모달 |
+| /payroll — 급여 확정 버튼 | ⬜ | ⬜ | 오너/매니저가 월 급여 확정 처리 |
+| /payroll — 주휴수당 표시 | ⬜ | ⬜ | 조건 충족 시 breakdown에 주휴수당 항목 표시 |
 | /settings | ✅ | ✅ | 매장 수정/삭제, 확장 필드(사업자명·번호·전화) 포함 |
+| /settings — 자동 퇴근 설정 섹션 | ⬜ | ⬜ | 활성화 토글, 모드 선택(스케줄/최대시간/자정), 기준값 입력 |
+| /settings — 매니저 읽기 전용 처리 | ⬜ | ⬜ | MANAGER 로그인 시 설정 페이지 편집 불가 UI |
 
 ---
 
@@ -171,8 +257,15 @@
 | (auth)/signup | ✅ | ✅ | 이름·이메일·비밀번호·전화번호, 유효성 검사, KeyboardAvoidingView |
 | (tabs)/index (홈·출퇴근) | ✅ | ✅ | 출퇴근 상태 동적, 30초 갱신, KST 시간 표시, stores=0 초대코드 입력 온보딩 |
 | (tabs)/attendance | ✅ | ✅ | 월별 출퇴근, 월 변경 네비게이션 추가 |
+| (tabs)/attendance — 수정 요청 | ⬜ | ⬜ | 레코드 탭 → 수정 요청 폼 (사유+시간), 요청 상태 배지 표시 |
+| (tabs)/attendance — 누락 출퇴근 신청 (+버튼) | ⬜ | ⬜ | 새 출퇴근 기록 수동 등록 요청 |
+| (tabs)/attendance — 자동퇴근 배지 | ⬜ | ⬜ | isAutoClockOut 레코드 구분 표시 |
 | (tabs)/schedule | ✅ | ✅ | 주간 스케줄, storeId TODO 해소 |
+| (tabs)/schedule — 역할별 분기 | ⬜ | ⬜ | OWNER/MANAGER: 전체 직원 스케줄 조회·등록, STAFF: 본인만 |
+| (tabs)/schedule — 주간 총 근무시간 | ⬜ | ⬜ | 하단에 이번주 합계 표시 (S-11 와이어프레임) |
 | (tabs)/payroll | ✅ | ✅ | 월별 급여, 월 변경 네비게이션 추가 |
+| (tabs)/payroll — 3.3% 공제 breakdown | ⬜ | ⬜ | 기본급·공제·실지급 항목 상세 표시 (S-13 와이어프레임) |
+| (tabs)/profile (프로필/설정 탭) | ⬜ | ⬜ | 이름·전화번호 수정, 로그아웃 (S-14 와이어프레임) |
 
 ### 4-3. 실기동 검증
 | 항목 | 상태 | 비고 |
@@ -182,7 +275,114 @@
 
 ---
 
-## 5. 테스트
+## 5. 세밀 기능 추가 — 기획 완료 / 구현 대기
+
+> 2026-04-27 기획 확정. 우선순위 순으로 구현 예정.
+
+### 5-1. 출퇴근 수정 요청 / 승인 흐름 🔴
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| AttendanceRequest 모델 + 마이그레이션 | ⬜ | |
+| API — POST /stores/:id/attendance-requests | ⬜ | STAFF→PENDING, OWNER/MANAGER→즉시 승인 |
+| API — GET /stores/:id/attendance-requests | ⬜ | |
+| API — GET /me/attendance-requests | ⬜ | |
+| API — PATCH /stores/:id/attendance-requests/:rid/review | ⬜ | 승인 시 출퇴근 기록 반영 |
+| 웹 /attendance — 수정 요청 탭 | ⬜ | PENDING 건수 뱃지, 승인/거절 UI |
+| 모바일 — 수정 요청 폼 + 상태 배지 | ⬜ | |
+
+### 5-2. 자동 퇴근 처리 (옵션) 🔴
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| Store 자동퇴근 설정 필드 마이그레이션 | ⬜ | autoClockOut, autoClockOutMode, autoClockOutBuffer, autoClockOutMaxHours |
+| Attendance.isAutoClockOut 필드 마이그레이션 | ⬜ | |
+| @nestjs/schedule Cron Job 구현 | ⬜ | 5분 주기, 매장별 설정 기준 처리 |
+| 웹 /settings — 자동퇴근 설정 섹션 | ⬜ | 모드 선택·기준값 UI |
+| 웹/모바일 — 자동퇴근 배지 표시 | ⬜ | |
+
+### 5-3. 스케줄 역할별 조회/등록 🔴
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 모바일 스케줄 탭 — 역할 분기 로직 | ⬜ | OWNER/MANAGER: 전체, STAFF: 본인 |
+| 모바일 — 오너/매니저 시프트 추가 UI | ⬜ | |
+| 스케줄 ↔ 출퇴근 scheduleId 자동 연결 | ⬜ | clock-in 시 당일 스케줄 자동 매칭 |
+
+### 5-4. 매니저 권한 관리 🔴
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| API — PATCH /stores/:id/staffs/:staffId/role | ⬜ | OWNER 전용 승격/강등 |
+| API — POST /stores/:id/invite 역할 분리 | ⬜ | role 파라미터 추가 |
+| 웹 /staffs — 매니저 승격/강등 버튼 | ⬜ | OWNER 로그인 시만 노출 |
+| 웹 /staffs — 초대 역할 선택 UI | ⬜ | MANAGER 코드는 OWNER만 발급 |
+
+### 5-5. 프로필 수정 🟡
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| API — PATCH /auth/me | ⬜ | 이름·전화번호 수정 |
+| 모바일 — (tabs)/profile 탭 | ⬜ | 이름·전화번호 수정 + 로그아웃 |
+
+### 5-6. 스케줄 편의 기능 🟡
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 웹 /schedules — 블록 수정 모달 | ⬜ | 기존 시프트 시간 변경 |
+| 웹 /schedules — 주간 복사 버튼 | ⬜ | API POST /stores/:id/schedules/copy-week |
+| 웹 /schedules — 월간 캘린더 뷰 | ⬜ | 날짜별 도트 표시 |
+| 모바일 스케줄 — 주간 총 근무시간 합계 | ⬜ | |
+
+### 5-7. 급여 확정 + 상세 🟡
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| API — POST /stores/:id/payroll/:staffId/confirm | ⬜ | isConfirmed 처리 |
+| 웹 /payroll — 확정 버튼 + 확정 상태 배지 | ⬜ | |
+| 모바일 급여 — 3.3% 공제 breakdown | ⬜ | |
+| 주휴수당 자동 계산 (주 15h 이상) | ⬜ | API calcWeeklyAllowance 활용 |
+
+### 5-8. 지각 감지 🟡
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 웹 /attendance — 지각 배지 | ⬜ | 스케줄 시작 대비 clock-in 지연 감지 |
+| 웹 /dashboard — 지각자 카운트 | ⬜ | stat 카드에 지각 수 표시 |
+
+### 5-9. UX 개선 🟢
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 웹 /staffs — 직원 이름 검색 | ⬜ | |
+| 웹 헤더 — 매니저 역할 배지 | ⬜ | MANAGER 로그인 시 표시 |
+| 웹 /settings — MANAGER 읽기 전용 | ⬜ | |
+| 다중 매장 전환 데이터 리로드 검증 | ⬜ | ⚠️ 항목 해소 |
+
+### 5-10. 실무 밀착 기능 (v1.2) 🟡
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 야간수당 계산 (API + 웹/모바일 표시) | ⬜ | 22:00~06:00, 매장 설정 기반 배율 |
+| 초과근무 수당 계산 (API + 웹/모바일 표시) | ⬜ | 스케줄 종료 후 초과 시간 집계 |
+| 최저시급 경고 (웹 시급 입력 시) | ⬜ | 법정 최저시급 상수 관리 |
+| 급여일 설정 + D-N 표시 | ⬜ | 웹 /settings + 웹/모바일 급여 화면 |
+| 4대보험 여부 관리 + 공제 분기 | ⬜ | 직원 상세 모달 + 급여 계산 분기 |
+| 직원 내부 메모 | ⬜ | 웹 직원 상세 모달 |
+| 계약 근무시간 관리 + 초과/미달 현황 | ⬜ | 웹 직원 상세 + 급여 화면 |
+| 퇴직자 재고용 | ⬜ | 웹 직원 목록 (퇴직 탭) |
+| 스케줄 확정 알림 | ⬜ | 확정 처리 시 인앱 알림 자동 생성 |
+| 직원별 근무 통계 페이지 (웹) | ⬜ | 지각·결근·평균 근무시간 |
+| 초과근무 감지 배지 (웹 출근 현황) | ⬜ | 스케줄 종료 후 N시간 이상 근무 중 |
+
+### 5-11. 완전한 플랫폼 기능 (v2.0) 🟢
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| 스케줄 변경 요청 (모바일 — 알바생) | ⬜ | 요청 제출·상태 확인 |
+| 스케줄 변경 요청 처리 (웹 — 오너/매니저) | ⬜ | 승인/거절 UI |
+| 대타 요청 (모바일) | ⬜ | 시프트 올리기 → 동료 수락 |
+| 근무 희망 시간 등록 (모바일 — 프로필 탭) | ⬜ | 요일별 가능 시간 등록 |
+| 근무 희망 시간 조회 (웹 — 스케줄 작성 참고) | ⬜ | 스케줄 등록 모달에 참고 표시 |
+| 반복 스케줄 설정 (웹) | ⬜ | isRecurring + repeatRule |
+| 인앱 알림 센터 (웹 + 모바일) | ⬜ | 알림 목록, 읽음 처리 |
+| 매장 공지사항 (웹 + 모바일) | ⬜ | 등록/조회, 모바일 홈 배너 |
+| 다중 매장 통합 대시보드 (웹) | ⬜ | 오너 전용 전 매장 현황 |
+| 인건비 비율 (웹 대시보드) | ⬜ | 매출 수동 입력 → 비율 계산 |
+| 급여 명세서 공유 (웹 + 모바일) | ⬜ | 클립보드/카카오 공유 |
+
+---
+
+## 6. 테스트
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
@@ -193,7 +393,7 @@
 
 ---
 
-## 6. 2차 기능 (선택)
+## 7. 2차 기능 (선택)
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
@@ -205,7 +405,7 @@
 
 ---
 
-## 7. Android / iOS 하이브리드 앱
+## 8. Android / iOS 하이브리드 앱
 
 > ⚠️ **선행 조건**: 웹 대시보드 전체 기능 완성 후 진행 (웹→WebView 래핑 전략)
 > 상세 계획: [`docs/PRD.md`](docs/PRD.md) 모바일 앱 전략 섹션 / [`docs/WIREFRAME.md`](docs/WIREFRAME.md) A-01~A-06
@@ -274,7 +474,7 @@
 
 ---
 
-## 8. 다음 작업 우선순위
+## 9. 다음 작업 우선순위
 
 | 순서 | 작업 | 세부 내용 |
 |------|------|----------|

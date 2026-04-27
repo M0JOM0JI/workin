@@ -1,11 +1,12 @@
 import { Controller, Get, Post, Patch, Delete, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { StoresService } from './stores.service';
 import { CreateStoreDto } from './dto/create-store.dto';
 import { UpdateStoreDto } from './dto/update-store.dto';
 import { UpdateStaffDto } from './dto/update-staff.dto';
+import { Role } from '@prisma/client';
 
 @ApiTags('매장')
 @ApiBearerAuth()
@@ -59,6 +60,28 @@ export class StoresController {
     @Body() dto: UpdateStaffDto,
   ) {
     return this.storesService.updateStaff(storeId, userId, staffId, dto);
+  }
+
+  @Patch(':id/staffs/:staffId/role')
+  @ApiOperation({ summary: '직원 역할 변경 (오너 전용)' })
+  @ApiBody({ schema: { properties: { role: { type: 'string', enum: ['MANAGER', 'STAFF'] } } } })
+  updateStaffRole(
+    @Param('id') storeId: string,
+    @Param('staffId') staffId: string,
+    @CurrentUser('id') userId: string,
+    @Body('role') role: Role,
+  ) {
+    return this.storesService.updateStaffRole(storeId, userId, staffId, role);
+  }
+
+  @Post(':id/staffs/:staffId/rehire')
+  @ApiOperation({ summary: '퇴직 직원 재고용 (오너/매니저)' })
+  rehireStaff(
+    @Param('id') storeId: string,
+    @Param('staffId') staffId: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.storesService.rehireStaff(storeId, userId, staffId);
   }
 
   @Post(':id/invite')
