@@ -9,6 +9,7 @@ export interface Schedule {
   startAt: string;
   endAt: string;
   memo?: string | null;
+  isConfirmed: boolean;
   staff: {
     id: string;
     user: { id: string; name: string };
@@ -49,6 +50,33 @@ export function useDeleteSchedule(storeId: string | null) {
   return useMutation({
     mutationFn: (scheduleId: string) =>
       api.delete(`/stores/${storeId}/schedules/${scheduleId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules', storeId] }),
+  });
+}
+
+export function useUpdateSchedule(storeId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: { id: string; startAt?: string; endAt?: string; memo?: string }) =>
+      api.patch(`/stores/${storeId}/schedules/${id}`, body).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules', storeId] }),
+  });
+}
+
+export function useConfirmSchedule(storeId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (scheduleId: string) =>
+      api.patch(`/stores/${storeId}/schedules/${scheduleId}/confirm`).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules', storeId] }),
+  });
+}
+
+export function useCopyWeek(storeId: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (fromDate: string) =>
+      api.post(`/stores/${storeId}/schedules/copy-week`, { fromDate }).then((r) => r.data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['schedules', storeId] }),
   });
 }

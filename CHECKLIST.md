@@ -1,6 +1,6 @@
 # Workin — 구현 현황 체크리스트
 
-> 마지막 갱신: 2026-04-27 (STEP 3 완료 — AttendanceRequest API + 자동퇴근 Cron + 웹·모바일 수정 요청 UI)
+> 마지막 갱신: 2026-04-27 (STEP 4 완료 — 스케줄 확정·주간복사 API + 웹 블록 상세/수정/확정 UI)
 
 ---
 
@@ -81,8 +81,8 @@
 | POST /stores/:id/schedules | ✅ | |
 | PATCH /stores/:id/schedules/:sid | ✅ | |
 | DELETE /stores/:id/schedules/:sid | ✅ | |
-| POST /stores/:id/schedules/copy-week | ⬜ | 특정 주 시프트 전체를 다음 주로 복사 |
-| PATCH /stores/:id/schedules/:sid/confirm | ⬜ | 스케줄 확정 처리 + 해당 알바생 알림 생성 |
+| POST /stores/:id/schedules/copy-week | ✅ | 현재 주 시프트 전체를 다음 주로 복사, 복사된 수 반환 |
+| PATCH /stores/:id/schedules/:sid/confirm | ✅ | 확정 토글 (isConfirmed true↔false) |
 | POST /stores/:id/schedules (반복 등록) | ⬜ | isRecurring, repeatRule 필드 활용, 매주 자동 생성 |
 
 ### 2-4-1. ScheduleRequest 모듈 (스케줄 변경 요청)
@@ -212,8 +212,8 @@
 | /schedules | ✅ | ✅ | 주간 그리드 (실제 API) |
 | /schedules — 시프트 추가 모달 | ✅ | ✅ | 직원 선택·날짜·KST 시간 입력 → POST |
 | /schedules — 블록 삭제 | ✅ | ✅ | 블록 클릭 → 삭제 확인 모달 → DELETE |
-| /schedules — 블록 수정 | ⬜ | ⬜ | 블록 클릭 시 삭제 외 시간 수정 모달 추가 |
-| /schedules — 주간 복사 버튼 | ⬜ | ⬜ | 이번 주 시프트 전체 → 다음 주 복사 |
+| /schedules — 블록 수정 | ✅ | ✅ | 블록 클릭 → 상세 모달 (시간 수정 + 확정 토글 + 삭제) |
+| /schedules — 주간 복사 버튼 | ✅ | ✅ | 헤더 '주간 복사' 버튼 → 다음 주로 이동 |
 | /schedules — 월간 캘린더 뷰 탭 | ⬜ | ⬜ | 날짜별 근무자 수 도트 표시 (B-03 와이어프레임) |
 | /staffs | ✅ | ✅ | 재직/퇴직 필터 |
 | /staffs — 직원 검색 | ⬜ | ⬜ | 이름 검색 입력창 (B-04 와이어프레임) |

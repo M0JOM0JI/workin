@@ -5,6 +5,7 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { CopyWeekDto } from './dto/copy-week.dto';
 
 @ApiTags('스케줄')
 @ApiBearerAuth()
@@ -34,6 +35,17 @@ export class SchedulesController {
     return this.schedulesService.create(storeId, userId, dto);
   }
 
+  // copy-week 는 :id 라우트보다 앞에 선언해야 충돌 없음
+  @Post('copy-week')
+  @ApiOperation({ summary: '이번 주 → 다음 주 시프트 전체 복사 (오너/매니저)' })
+  copyWeek(
+    @Param('storeId') storeId: string,
+    @CurrentUser('id') userId: string,
+    @Body() dto: CopyWeekDto,
+  ) {
+    return this.schedulesService.copyWeek(storeId, userId, dto);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: '스케줄 수정 (오너/매니저)' })
   update(
@@ -43,6 +55,16 @@ export class SchedulesController {
     @Body() dto: UpdateScheduleDto,
   ) {
     return this.schedulesService.update(storeId, id, userId, dto);
+  }
+
+  @Patch(':id/confirm')
+  @ApiOperation({ summary: '스케줄 확정 토글 (오너/매니저)' })
+  confirm(
+    @Param('storeId') storeId: string,
+    @Param('id') id: string,
+    @CurrentUser('id') userId: string,
+  ) {
+    return this.schedulesService.confirm(storeId, id, userId);
   }
 
   @Delete(':id')
